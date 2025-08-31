@@ -1,0 +1,9 @@
+[source]
+type = "camera"
+index = 0
+width = 1280
+height = 720
+
+[pipeline.canny]
+low = 50
+high = 150
