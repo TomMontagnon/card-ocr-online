@@ -1,10 +1,14 @@
 from __future__ import annotations
 import cv2
 from core.api.interfaces import IPipelineStage
-from core.api.types import Frame, Meta
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.api.types import Frame, Meta
+
 
 class CannyStage(IPipelineStage):
-    def __init__(self, low: int = 50, high: int = 150):
+    def __init__(self, low: int = 50, high: int = 150) -> None:
         self.low, self.high = low, high
 
     def process(self, frame: Frame, meta: Meta):
