@@ -5,6 +5,8 @@ from core.io.sources import CameraSource
 from core.pipeline.base import Pipeline
 from core.pipeline.stages.canny import CannyStage
 from .widgets.video_view import VideoView
+from .widgets.settings_widget import SettingsWidget
+from .widgets.add_cards_widget import AddHistoryWidget
 from .controller import AppController
 
 def main() -> None:
@@ -12,59 +14,34 @@ def main() -> None:
 
     # UI
     win = QtWidgets.QMainWindow()
-    left_view = VideoView()
-    right_view = VideoView()
-    right_view1 = VideoView()
-    right_view2 = VideoView()
+    main_cam_view = VideoView()
+    card_id_zoom_view = VideoView()
+    card_artwork_view = VideoView()
     toolbar = QtWidgets.QToolBar("Controls")
+    setting_widget = SettingsWidget()
+    add_card_widget = AddHistoryWidget()
     btn_start = QtGui.QAction("Start", win)
     btn_stop  = QtGui.QAction("Stop", win)
-    toolbar.addAction(btn_start); toolbar.addAction(btn_stop)
+    toolbar.addAction(btn_start)
+    toolbar.addAction(btn_stop)
     win.addToolBar(toolbar)
 
 
-    right_top_panel = QtWidgets.QWidget()
-    right_top_vbox  = QtWidgets.QVBoxLayout(right_top_panel)
-    right_top_vbox.setContentsMargins(0, 0, 0, 0)
-    right_top_vbox.setSpacing(6)
-    right_top_vbox.addWidget(right_view)
-
-
-    right_middle_panel = QtWidgets.QWidget()
-    right_middle_vbox  = QtWidgets.QVBoxLayout(right_middle_panel)
-    right_middle_vbox.setContentsMargins(0, 0, 0, 0)
-    right_middle_vbox.setSpacing(6)
-    right_middle_vbox.addWidget(right_view1)
-
-    right_bottom_panel = QtWidgets.QWidget()
-    right_bottom_vbox  = QtWidgets.QVBoxLayout(right_bottom_panel)
-    right_bottom_vbox.setContentsMargins(0, 0, 0, 0)
-    right_bottom_vbox.setSpacing(6)
-    right_bottom_vbox.addWidget(right_view2)
-
-    right_splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
-    right_splitter.addWidget(right_top_panel)
-    right_splitter.addWidget(right_middle_panel)
-    right_splitter.addWidget(right_bottom_panel)
-    right_splitter.setChildrenCollapsible(False)
-    right_splitter.setHandleWidth(6)
-    right_splitter.setStretchFactor(0, 1)
-    right_splitter.setStretchFactor(1, 3)
-    right_splitter.setStretchFactor(2, 3)
+    side_box = QtWidgets.QVBoxLayout()
+    side_box.addWidget(card_id_zoom_view,1)
+    side_box.addWidget(setting_widget,1)
+    side_box.addWidget(card_artwork_view,3)
+    side_box.addWidget(add_card_widget,1)
+    # side_box.addWidget(QtWidgets.QLabel(),3)
 
     # Splitter horizontal: gauche 3/4, droite 1/4
-    splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
-    splitter.addWidget(left_view)
-    splitter.addWidget(right_splitter)
-    splitter.setChildrenCollapsible(False)
-    splitter.setHandleWidth(6)
-    # Indice 0 = gauche, 1 = droite
-    splitter.setStretchFactor(0, 3)
-    splitter.setStretchFactor(1, 1)
+    central_panel = QtWidgets.QWidget()
+    main_box = QtWidgets.QHBoxLayout(central_panel)
+    main_box.addWidget(main_cam_view,3)
+    main_box.addLayout(side_box,1)
 
-    
-    win.setCentralWidget(splitter)
-    win.resize(960, 720)
+    win.setCentralWidget(central_panel)
+    win.resize(1080, 720)
     win.setWindowTitle("OpenCV + PySide (core découplé)")
     win.show()
 
@@ -72,10 +49,9 @@ def main() -> None:
     source = CameraSource(0)
     pipeline = Pipeline([CannyStage()])
     ctrl = AppController(source, pipeline)
-    ctrl.main_sink.connect(left_view.set_frame)
-    ctrl.side_sink.connect(right_view.set_frame)
-    ctrl.side_sink.connect(right_view1.set_frame)
-    ctrl.side_sink.connect(right_view2.set_frame)
+    ctrl.main_cam_sink.connect(main_cam_view.set_frame)
+    ctrl.card_id_zoom_sink.connect(card_id_zoom_view.set_frame)
+    ctrl.card_artwork_sink.connect(card_artwork_view.set_frame)
 
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
