@@ -1,9 +1,10 @@
 from PySide6 import QtWidgets, QtCore
 
+
 class ToggleButton(QtWidgets.QPushButton):
     toggledChanged = QtCore.Signal(bool)
 
-    def __init__(self, parent=None, checked=False):
+    def __init__(self, parent: QtWidgets.QWidget = None, checked: bool = False) -> None:
         super().__init__(parent)
         self.setCheckable(True)
         self.setChecked(checked)
@@ -21,9 +22,9 @@ class ToggleButton(QtWidgets.QPushButton):
             }
         """)
 
-    def _on_toggled(self, state: bool):
+    def _on_toggled(self, state: bool) -> None:
         self._update_text()
         self.toggledChanged.emit(state)
 
-    def _update_text(self):
+    def _update_text(self) -> None:
         self.setText("On" if self.isChecked() else "Off")

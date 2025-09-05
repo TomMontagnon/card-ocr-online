@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui
 from core.io.sources import CameraSource
 from core.pipeline.base import Pipeline
 from core.pipeline.stages.canny import CannyStage
@@ -8,6 +8,14 @@ from .widgets.video_view import VideoView
 from .widgets.settings_widget import SettingsWidget
 from .widgets.add_cards_widget import AddHistoryWidget
 from .controller import AppController
+from enum import Enum
+
+
+# Exemple d'énumération Python
+class Mode(Enum):
+    RAPIDE = 1
+    PRECIS = 2
+    PERSONNALISE = 3
 
 def main() -> None:
     app = QtWidgets.QApplication(sys.argv)
@@ -18,7 +26,7 @@ def main() -> None:
     card_id_zoom_view = VideoView()
     card_artwork_view = VideoView()
     toolbar = QtWidgets.QToolBar("Controls")
-    setting_widget = SettingsWidget()
+    setting_widget = SettingsWidget(Mode)
     add_card_widget = AddHistoryWidget()
     btn_start = QtGui.QAction("Start", win)
     btn_stop  = QtGui.QAction("Stop", win)
