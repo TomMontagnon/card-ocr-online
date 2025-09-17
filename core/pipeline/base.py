@@ -12,7 +12,7 @@ class Pipeline:
     def __init__(self, stages: Iterable[IPipelineStage]) -> None:
         self.stages = list(stages)
 
-    def run_once(self, frame: Frame, meta: Meta) -> tuple[Any, Meta]:
+    def run_once(self, frame: Frame, meta: Meta) -> (Frame, Meta):
         data: Any = frame
         m = meta
         for st in self.stages:

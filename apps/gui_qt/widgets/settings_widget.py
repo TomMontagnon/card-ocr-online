@@ -52,7 +52,7 @@ class SettingsWidget(QtWidgets.QWidget):
         self.combo_enum.clear()
         for member in self.enum_type:
             # Texte lisible, valeur stockée en UserRole
-            self.combo_enum.addItem(member.name.title(), member)
+            self.combo_enum.addItem(member.name, member)
 
     @QtCore.Slot(bool)
     def _on_auto_changed(self, state: bool) -> None:
@@ -67,7 +67,7 @@ class SettingsWidget(QtWidgets.QWidget):
     # Public API ---------------------------------------------------------------
 
     # def is_auto(self) -> bool:
-    #     return self.toggle.isChecked()
+    #     return self.toggle_auto.isChecked()
 
     # def selected_enum(self) -> Enum | None:
     #     idx = self.combo_enum.currentIndex()
@@ -85,12 +85,12 @@ class SettingsWidget(QtWidgets.QWidget):
     #         "seuil": self.integer_value(),
     #     }
 
-    # def set_value(self, mode: Enum | None, seuil: int, *, auto_detect: bool) -> None:
-    #     self.toggle.setChecked(auto_detect)
-    #     if mode is not None:
-    #         # rechercher l'index porteur de ce member
-    #         for i in range(self.combo_enum.count()):
-    #             if self.combo_enum.itemData(i) == mode:
-    #                 self.combo_enum.setCurrentIndex(i)
-    #                 break
-    #     self.spin_int.setValue(seuil)
+    def set_value(self, expansion: Enum | None, id_card: int, *, auto_detect: bool) -> None:
+        self.toggle_auto.setChecked(auto_detect)
+        if expansion is not None:
+            # rechercher l'index porteur de ce member
+            for i in range(self.combo_enum.count()):
+                if self.combo_enum.itemData(i) == expansion:
+                    self.combo_enum.setCurrentIndex(i)
+                    break
+        self.spin_int.setValue(id_card)

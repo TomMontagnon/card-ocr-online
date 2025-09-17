@@ -6,7 +6,7 @@ from paddleocr import PaddleOCR
 CARD_W_MM = 63.0
 CARD_H_MM = 88.0
 CARD_RATIO = CARD_W_MM / CARD_H_MM  # ~0.7159
-RTSP_URL = "http://192.168.1.82:8080/video/mjpeg"
+RTSP_URL = "http://10.170.225.2:8080/video/mjpeg"
 
 # Taille de sortie en pixels (gardez le ratio 63:88)
 OUT_W = 500
@@ -91,115 +91,6 @@ def extract_texts(results, min_conf=0.3):
                 continue
     return out
 
-
-def _find_card_quad(bgr):
-    # Prétraitements
-    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    # Bords et renforcement
-    edges = cv2.Canny(gray, 60, 180)
-    edges = cv2.dilate(edges, np.ones((3, 3), np.uint8), iterations=1)
-    edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
-
-    # Contours
-    cnts, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not cnts:
-        return None, edges
-
-    h, w = gray.shape
-    img_area = w * h
-
-    # Trier par aire décroissante pour trouver "la" carte dominante
-    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
-
-    for c in cnts:
-        area = cv2.contourArea(c)
-        if area < 0.02 * img_area:  # ignorer petits objets (<2% de l'image)
-            continue
-
-        # Approx polygone
-        peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.02 * peri, True)  # 2% du périmètre
-
-        if len(approx) != 4 or not cv2.isContourConvex(approx):
-            continue
-
-        # Vérifier ratio via bounding box minAreaRect
-        rect = cv2.minAreaRect(approx)
-        (cx, cy), (wrect, hrect), angle = rect
-        if wrect == 0 or hrect == 0:
-            continue
-        aspect = min(wrect, hrect) / max(wrect, hrect)  # ratio <= 1
-
-        # Une carte Magic ~0.716, tolérance +/- ~0.06
-        if 0.66 <= aspect <= 0.76:
-            # OK, on renvoie les 4 points (float32)
-            quad = approx.reshape(-1, 2).astype(np.float32)
-            return quad, edges
-
-    return None, edges
-
-
-def _order_points_clockwise(pts):
-    # pts: (4,2)
-    # renvoie: [top-left, top-right, bottom-right, bottom-left]
-    rect = np.zeros((4, 2), dtype=np.float32)
-    s = pts.sum(axis=1)
-    diff = np.diff(pts, axis=1)
-
-    rect[0] = pts[np.argmin(s)]  # top-left (x+y min)
-    rect[2] = pts[np.argmax(s)]  # bottom-right (x+y max)
-    rect[1] = pts[np.argmin(diff)]  # top-right (x - y min)
-    rect[3] = pts[np.argmax(diff)]  # bottom-left (x - y max)
-    return rect
-
-
-def _warp_card(bgr, quad, out_w=OUT_W, out_h=OUT_H):
-    src = _order_points_clockwise(quad)
-    dst = np.array(
-        [[0, 0], [out_w - 1, 0], [out_w - 1, out_h - 1], [0, out_h - 1]],
-        dtype=np.float32,
-    )
-    M = cv2.getPerspectiveTransform(src, dst)
-    warped = cv2.warpPerspective(bgr, M, (out_w, out_h))
-    return warped, M
-
-
-def bottom_right_roi(img):
-    """Retourne l'intersection: bas 5% × droite 50% d'une image BGR."""
-    if img is None:
-        return None
-    h, w = img.shape[:2]
-    if h == 0 or w == 0:
-        return None
-    band_h = max(1, int(round(0.07 * h)))  # 5% de la hauteur, au moins 1 px
-    y0 = max(0, h - band_h)
-    x0 = 3 * w // 4  # moitié droite
-    return img[y0:h, x0:w]
-
-
-def process_frame(frame):
-    quad, edges = _find_card_quad(frame)
-    vis = frame.copy()
-    warped = None
-    if quad is not None:
-        # Dessiner le quadrilatère détecté
-        cv2.polylines(vis, [quad.astype(int)], True, (0, 255, 0), 3)
-
-        # Redressement
-        warped, _ = _warp_card(frame, quad, OUT_W, OUT_H)
-
-        # Afficher quelques infos
-        cv2.putText(
-            vis, "Card detected", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2
-        )
-    else:
-        cv2.putText(
-            vis, "No card", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2
-        )
-
-    return vis, edges, warped
 
 
 def print_results(lines):
