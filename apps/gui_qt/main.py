@@ -1,12 +1,17 @@
 from __future__ import annotations
 import sys
 from PySide6 import QtWidgets, QtGui
-from core.io.sources import RtspSource
+from core.io.sources import RtspSource, CameraSource
 from core.pipeline.base import Pipeline
 from core.pipeline.stages.card_detector import CardDetectorStage
 from core.pipeline.stages.edge_extractor import EdgeExtractionStage
 from core.pipeline.stages.card_warp import CardWarpStage
 from core.pipeline.stages.card_crop import CardCropStage
+from core.pipeline.stages.ocr_extract_text import OcrExtractTextStage
+from core.pipeline.stages.ocr_preprocess import OcrPreprocessStage
+from core.pipeline.stages.ocr_print_results import OcrPrintResultsStage
+from core.pipeline.stages.ocr_process import OcrProcessStage
+
 
 from apps.gui_qt.widgets.video_view import VideoView
 from apps.gui_qt.widgets.settings_widget import SettingsWidget
@@ -51,17 +56,24 @@ def main() -> None:
     win.show()
 
     # Wiring
-    # source = CameraSource(0)
-    source = RtspSource("http://10.160.17.23:8080/video/mjpeg")
-    pipeline_main = Pipeline(
-        [EdgeExtractionStage(), CardDetectorStage()]
-    )
+    source = CameraSource(0)
+    # source = RtspSource("http://10.170.225.107:8080/video/mjpeg")
+    pipeline_main = Pipeline([EdgeExtractionStage(), CardDetectorStage()])
     pipeline_side = Pipeline([CardWarpStage(), CardCropStage()])
-    ctrl = AppController(source, pipeline_main, pipeline_side, setting_widget)
+    pipeline_ocr = Pipeline(
+        [
+            OcrPreprocessStage(),
+            OcrProcessStage(),
+            OcrExtractTextStage(),
+            OcrPrintResultsStage(),
+        ]
+    )
+    ctrl = AppController(
+        source, pipeline_main, pipeline_side, pipeline_ocr, setting_widget
+    )
     ctrl.main_cam_sink.connect(main_cam_view.set_frame)
     ctrl.card_id_zoom_sink.connect(card_id_zoom_view.set_frame)
     ctrl.card_artwork_sink.connect(card_artwork_view.set_frame)
-
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 class CardCropStage(IPipelineStage):
     def process(self, frame: Frame, meta: Meta) -> (Frame, Meta):
         if frame is None:
-            return None
+            return None, None
         h, w = frame.shape[:2]
         if h == 0 or w == 0:
             return None

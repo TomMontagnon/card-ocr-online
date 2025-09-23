@@ -4,7 +4,7 @@ from PySide6 import QtWidgets, QtCore
 
 
 class SettingsWidget(QtWidgets.QWidget):
-    changed = QtCore.Signal()
+    _changed = QtCore.Signal(dict)
 
     def __init__(self, enum_type: type[Enum], parent: QtWidgets.QWidget = None) -> None:
         super().__init__(parent)
@@ -39,8 +39,8 @@ class SettingsWidget(QtWidgets.QWidget):
 
         # Connexions
         self.toggle_auto.toggledChanged.connect(self._on_auto_changed)
-        self.combo_enum.currentIndexChanged.connect(lambda *_: self.changed.emit())
-        self.spin_int.valueChanged.connect(lambda *_: self.changed.emit())
+        self.combo_enum.currentIndexChanged.connect(lambda *_: self._changed.emit(self.value()))
+        self.spin_int.valueChanged.connect(lambda *_: self._changed.emit(self.value()))
 
         # Initial state
         self._apply_auto_state(self.toggle_auto.isChecked())
@@ -57,33 +57,36 @@ class SettingsWidget(QtWidgets.QWidget):
     @QtCore.Slot(bool)
     def _on_auto_changed(self, state: bool) -> None:
         self._apply_auto_state(state)
-        self.changed.emit()
+        self._changed.emit(self.value())
 
     def _apply_auto_state(self, auto: bool) -> None:
         # Désactiver les champs quand Auto-detect est actif
         self.combo_enum.setEnabled(not auto)
         self.spin_int.setEnabled(not auto)
 
+    def connect(self, slot) -> None:
+        # Connection queued => thread-safe si push() vient d'un thread worker
+        self._changed.connect(slot, QtCore.Qt.ConnectionType.QueuedConnection)
     # Public API ---------------------------------------------------------------
 
-    # def is_auto(self) -> bool:
-    #     return self.toggle_auto.isChecked()
+    def is_auto(self) -> bool:
+        return self.toggle_auto.isChecked()
 
-    # def selected_enum(self) -> Enum | None:
-    #     idx = self.combo_enum.currentIndex()
-    #     if idx < 0:
-    #         return None
-    #     return self.combo_enum.itemData(idx)
+    def selected_enum(self) -> Enum | None:
+        idx = self.combo_enum.currentIndex()
+        if idx < 0:
+            return None
+        return self.combo_enum.itemData(idx)
 
-    # def integer_value(self) -> int:
-    #     return self.spin_int.value()
+    def integer_value(self) -> int:
+        return self.spin_int.value()
 
-    # def value(self) -> dict[str, Any]:
-    #     return {
-    #         "auto_detect": self.is_auto(),
-    #         "mode": self.selected_enum(),
-    #         "seuil": self.integer_value(),
-    #     }
+    def value(self) -> dict[str, str]:
+        return {
+            "auto_detect": self.is_auto(),
+            "exp": self.selected_enum(),
+            "card_id": str(self.integer_value()),
+        }
 
     def set_value(self, expansion: Enum | None, id_card: int, *, auto_detect: bool) -> None:
         self.toggle_auto.setChecked(auto_detect)
