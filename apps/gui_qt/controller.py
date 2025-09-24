@@ -2,8 +2,8 @@ from __future__ import annotations
 import threading
 import cv2
 from PySide6 import QtCore
-from core.api.types import Meta
 from apps.gui_qt.qt_ui_sink import QtUISink
+from core.io.sinks import CompositeSink, VideoWriterSink
 from core.api.types import Expansion, NoCardDetectedError
 from core.utils.fetch_artwork import FetchArtwork
 from core.utils.imaging import np_from_url
@@ -69,13 +69,13 @@ class AppController(QtCore.QObject):
                     break
                 raw_frame, raw_meta = item
                 try:
-                    main_frame, main_meta = self._pipeline_main.run_once(
+                    edge_frame, edge_meta = self._pipeline_main.run_once(
                         raw_frame, raw_meta
                     )
                     side_frame, side_meta = self._pipeline_side.run_once(
-                        main_frame, main_meta
+                        raw_frame, edge_meta
                     )
-                    _, ocr_meta = self._pipeline_ocr.run_once(side_frame, side_meta)
+                    # _, ocr_meta = self._pipeline_ocr.run_once(side_frame, side_meta)
                     self.setting_widget.set_value(Expansion.JTL_FR, 2, auto_detect=True)
                     # self.setting_widget.set_value(
                     #     ocr_meta["expansion"], ocr_meta["idcard"], auto_detect=True
@@ -83,7 +83,7 @@ class AppController(QtCore.QObject):
 
                     cv2.polylines(
                         raw_frame,
-                        [main_meta.info["quad"].astype(int)],
+                        [edge_meta.info["quad"].astype(int)],
                         True,
                         (0, 255, 0),
                         3,
@@ -118,4 +118,7 @@ class AppController(QtCore.QObject):
 
                 # self.card_artwork_sink.push(self.image, Meta(0))
         finally:
+            self.main_cam_sink.close()
+            self.card_id_zoom_sink.close()
+            self.card_artwork_sink.close()
             self._source.stop()

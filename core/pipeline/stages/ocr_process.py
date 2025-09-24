@@ -7,11 +7,12 @@ if TYPE_CHECKING:
     from core.api.types import Frame, Meta
 
 class OcrProcessStage(IPipelineStage):
-    OCR = PaddleOCR(
-        lang="en",
-        device="cpu",  # "gpu:0" si CUDA ok
-        use_textline_orientation=False,
-    )
+    def __init__(self) -> None:
+        self.OCR = PaddleOCR(
+            lang="en",
+            device="cpu",  # "gpu:0" si CUDA ok
+            use_textline_orientation=False,
+        )
     def process(self, frame: Frame, meta: Meta) -> (Frame, Meta):
         meta.info["ocr_results"] = self.OCR.predict(
             frame, use_textline_orientation=False

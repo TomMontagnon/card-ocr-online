@@ -13,7 +13,7 @@ class FetchArtwork:
     def __init__(self) -> None:
         self._em = _Emitter()
 
-    def connect(self, slot) -> None:
+    def connect(self, slot : callable) -> None:
         # Connection queued => thread-safe si push() vient d'un thread worker
         self._em.frame_ready.connect(slot, QtCore.Qt.ConnectionType.QueuedConnection)
 

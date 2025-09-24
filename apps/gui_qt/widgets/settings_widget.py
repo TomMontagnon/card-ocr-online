@@ -23,7 +23,6 @@ class SettingsWidget(QtWidgets.QWidget):
         self.spin_int.setRange(0, 1_000)
         self.spin_int.setValue(1)
 
-
         # Layout
         grid = QtWidgets.QGridLayout(self)
         grid.setColumnStretch(1, 1)
@@ -39,12 +38,13 @@ class SettingsWidget(QtWidgets.QWidget):
 
         # Connexions
         self.toggle_auto.toggledChanged.connect(self._on_auto_changed)
-        self.combo_enum.currentIndexChanged.connect(lambda *_: self._changed.emit(self.value()))
+        self.combo_enum.currentIndexChanged.connect(
+            lambda *_: self._changed.emit(self.value())
+        )
         self.spin_int.valueChanged.connect(lambda *_: self._changed.emit(self.value()))
 
         # Initial state
         self._apply_auto_state(self.toggle_auto.isChecked())
-
 
     # Slots / internals --------------------------------------------------------
 
@@ -64,9 +64,10 @@ class SettingsWidget(QtWidgets.QWidget):
         self.combo_enum.setEnabled(not auto)
         self.spin_int.setEnabled(not auto)
 
-    def connect(self, slot) -> None:
+    def connect(self, slot: callable) -> None:
         # Connection queued => thread-safe si push() vient d'un thread worker
         self._changed.connect(slot, QtCore.Qt.ConnectionType.QueuedConnection)
+
     # Public API ---------------------------------------------------------------
 
     def is_auto(self) -> bool:
@@ -88,7 +89,9 @@ class SettingsWidget(QtWidgets.QWidget):
             "card_id": str(self.integer_value()),
         }
 
-    def set_value(self, expansion: Enum | None, id_card: int, *, auto_detect: bool) -> None:
+    def set_value(
+        self, expansion: Enum | None, id_card: int, *, auto_detect: bool
+    ) -> None:
         self.toggle_auto.setChecked(auto_detect)
         if expansion is not None:
             # rechercher l'index porteur de ce member

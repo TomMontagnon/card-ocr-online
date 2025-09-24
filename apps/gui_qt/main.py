@@ -56,16 +56,16 @@ def main() -> None:
     win.show()
 
     # Wiring
-    source = CameraSource(0)
-    # source = RtspSource("http://10.170.225.107:8080/video/mjpeg")
+    # source = CameraSource(0)
+    source = RtspSource("http://10.170.225.45:8080/video/mjpeg")
     pipeline_main = Pipeline([EdgeExtractionStage(), CardDetectorStage()])
     pipeline_side = Pipeline([CardWarpStage(), CardCropStage()])
     pipeline_ocr = Pipeline(
         [
-            OcrPreprocessStage(),
-            OcrProcessStage(),
-            OcrExtractTextStage(),
-            OcrPrintResultsStage(),
+            # OcrPreprocessStage(),
+            # OcrProcessStage(),
+            # OcrExtractTextStage(),
+            # OcrPrintResultsStage(),
         ]
     )
     ctrl = AppController(
@@ -77,7 +77,6 @@ def main() -> None:
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
-
     sys.exit(app.exec())
 
 
