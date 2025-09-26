@@ -1,6 +1,7 @@
 from __future__ import annotations
 import threading
 import cv2
+# import pdb
 from PySide6 import QtCore
 from apps.gui_qt.qt_ui_sink import QtUISink
 from core.io.sinks import CompositeSink, VideoWriterSink
@@ -47,6 +48,7 @@ class AppController(QtCore.QObject):
         self.fetchArt = FetchArtwork()
         self.setting_widget.connect(self.fetchArt.process)
         self.fetchArt.connect(self.card_artwork_sink.push)
+        self.start()
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -56,14 +58,27 @@ class AppController(QtCore.QObject):
         self._thread.start()
 
     def stop(self) -> None:
+        # 1. Signaler l'arrêt
         self._stop_evt.set()
-        if self._thread:
-            self._thread.join(timeout=1.0)
+        # 2. Attendre la fin du thread
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
+
+        # 3. Fermer sinks et source
+        self.main_cam_sink.close()
+        self.card_id_zoom_sink.close()
+        self.card_artwork_sink.close()
+        self._source.stop()
 
     def _loop(self) -> None:
         self._source.start()
+        i = 0
         try:
             while not self._stop_evt.is_set():
+                i+=1
+                # if i==84:
+                #     breakpoint()
+                print(i)
                 item = self._source.read()
                 if item is None:
                     break
@@ -111,6 +126,8 @@ class AppController(QtCore.QObject):
                         2,
                     )
 
+                # print("CTRL Raw: ", raw_frame.shape)
+                # print("CTRL Side: ", side_frame.shape)
                 # SINK PUSHED
                 self.main_cam_sink.push(raw_frame, raw_meta)
                 self.card_id_zoom_sink.push(side_frame, side_meta)
@@ -118,7 +135,4 @@ class AppController(QtCore.QObject):
 
                 # self.card_artwork_sink.push(self.image, Meta(0))
         finally:
-            self.main_cam_sink.close()
-            self.card_id_zoom_sink.close()
-            self.card_artwork_sink.close()
             self._source.stop()

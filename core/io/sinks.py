@@ -56,7 +56,6 @@ class CompositeSink(IFrameSink):
 
     def connect(self, slot: callable) -> None:
         for s in self._sinks:
-            print(s)
             s.connect(slot)
 
     def close(self) -> None:

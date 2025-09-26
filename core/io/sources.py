@@ -80,7 +80,17 @@ class VideoFileSource(IFrameSource):
         ok, frame = self.cap.read()
         if not ok:
             return None
-        return frame, Meta(int(self.cap.get(cv2.CAP_PROP_POS_MSEC)))
+
+        # if not ok:
+        # # on est arrivé à la fin : repartir au début
+        # self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        # ok, frame = self.cap.read()
+        # if not ok:
+        #     return None
+        
+        # print("SRC : ", frame.shape)
+        # time.sleep(0.1)
+        return frame.copy(), Meta(int(self.cap.get(cv2.CAP_PROP_POS_MSEC)))
 
     def stop(self) -> None:
         if self.cap:

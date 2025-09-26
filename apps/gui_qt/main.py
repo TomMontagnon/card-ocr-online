@@ -1,16 +1,16 @@
 from __future__ import annotations
 import sys
 from PySide6 import QtWidgets, QtGui
-from core.io.sources import RtspSource, CameraSource
+from core.io.sources import RtspSource, CameraSource, VideoFileSource
 from core.pipeline.base import Pipeline
-from core.pipeline.stages.card_detector import CardDetectorStage
-from core.pipeline.stages.edge_extractor import EdgeExtractionStage
-from core.pipeline.stages.card_warp import CardWarpStage
-from core.pipeline.stages.card_crop import CardCropStage
-from core.pipeline.stages.ocr_extract_text import OcrExtractTextStage
-from core.pipeline.stages.ocr_preprocess import OcrPreprocessStage
-from core.pipeline.stages.ocr_print_results import OcrPrintResultsStage
-from core.pipeline.stages.ocr_process import OcrProcessStage
+from core.pipeline.stages.card_detector import CardDetectorStage, EdgeExtractionStage
+from core.pipeline.stages.card_format import CardWarpStage, CardCropStage
+from core.pipeline.stages.optic_char_recog import (
+    OcrExtractTextStage,
+    OcrPreprocessStage,
+    OcrPrintResultsStage,
+    OcrProcessStage,
+)
 
 
 from apps.gui_qt.widgets.video_view import VideoView
@@ -57,7 +57,8 @@ def main() -> None:
 
     # Wiring
     # source = CameraSource(0)
-    source = RtspSource("http://10.170.225.45:8080/video/mjpeg")
+    source = VideoFileSource("videos/video1.mp4")
+    # source = RtspSource("http://10.170.225.45:8080/video/mjpeg")
     pipeline_main = Pipeline([EdgeExtractionStage(), CardDetectorStage()])
     pipeline_side = Pipeline([CardWarpStage(), CardCropStage()])
     pipeline_ocr = Pipeline(
