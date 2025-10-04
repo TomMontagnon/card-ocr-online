@@ -1,5 +1,5 @@
 import sys
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtWidgets, QtGui, QtCore
 from apps.gui_qt.widgets.video_view import VideoView
 from apps.gui_qt.widgets.settings_widget import SettingsWidget
 from core.api.types import Expansion
@@ -22,34 +22,67 @@ from apps.gui_qt.qt_ui_sink import QtUISink
 def main() -> None:
     app = QtWidgets.QApplication(sys.argv)
 
-    # UI
+    screen_geometry = app.primaryScreen().availableGeometry()
+    screen_width = screen_geometry.width()
+    screen_height = screen_geometry.height()
+
+    default_width = int(screen_width * 0.9)
+    side_panel_width = int(default_width // 5)
+
+    default_height = int(((default_width-side_panel_width) * 9 / 16))
+    side_panel_height = int(default_height)
+
     win = QtWidgets.QMainWindow()
+    win.setWindowTitle("OpenCV + PySide (core découplé)")
+
+    # ====================
+    # Main Widgets
+    # ====================
     main_cam_view = VideoView()
     card_id_zoom_view = VideoView()
     card_artwork_view = VideoView()
-    toolbar = QtWidgets.QToolBar("Controls")
     settings_widget = SettingsWidget(Expansion)
     add_card_widget = AddHistoryWidget()
+
+    # ====================
+    # Toolbar
+    # ====================
+    toolbar = QtWidgets.QToolBar("Controls")
     btn_start = QtGui.QAction("Start", win)
     btn_stop = QtGui.QAction("Stop", win)
     toolbar.addAction(btn_start)
     toolbar.addAction(btn_stop)
     win.addToolBar(toolbar)
 
-    side_box = QtWidgets.QVBoxLayout()
-    side_box.addWidget(card_id_zoom_view, 1)
-    side_box.addWidget(settings_widget, 1)
-    side_box.addWidget(card_artwork_view, 3)
-    side_box.addWidget(add_card_widget, 1)
+    # ====================
+    # Side panel
+    # ====================
+    side_box_layout = QtWidgets.QVBoxLayout()
+    side_box_layout.addWidget(card_id_zoom_view, 1)
+    side_box_layout.addWidget(settings_widget, 1)
+    side_box_layout.addWidget(card_artwork_view, 3)
+    side_box_layout.addWidget(add_card_widget, 1)
 
+    side_box_widget = QtWidgets.QWidget()
+    side_box_widget.setLayout(side_box_layout)
+    side_box_widget.setFixedWidth(side_panel_width)
+    side_box_widget.setMinimumHeight(side_panel_height)
+
+    # ====================
+    # Layout central
+    # ====================
     central_panel = QtWidgets.QWidget()
-    main_box = QtWidgets.QHBoxLayout(central_panel)
-    main_box.addWidget(main_cam_view, 3)
-    main_box.addLayout(side_box, 1)
+    main_layout = QtWidgets.QHBoxLayout(central_panel)
+    main_layout.addWidget(main_cam_view)
+    main_layout.addWidget(side_box_widget)
 
     win.setCentralWidget(central_panel)
-    win.resize(1080, 720)
-    win.setWindowTitle("OpenCV + PySide (core découplé)")
+
+    # ====================
+    # Taille par défaut
+    # ====================
+    win.resize(default_width, default_height)
+
     win.show()
 
     # APP CONTROLLER
