@@ -15,7 +15,6 @@ class IFrameSource(ABC):
     @abstractmethod
     def stop(self) -> None: ...
 
-
 class IPipelineStage(ABC):
     @abstractmethod
     def process(self, frame: Frame, meta: Meta) -> tuple[Any, Meta]: ...

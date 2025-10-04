@@ -13,11 +13,7 @@ class FetchArtWorker(QtCore.QObject):
     def __init__(self) -> None:
         super().__init__()
 
-    def connect(self, slot: callable) -> None:
-        # Connection queued => thread-safe si push() vient d'un thread worker
-        self.frame_ready.connect(slot, QtCore.Qt.ConnectionType.QueuedConnection)
-
-    def process(self, dico: dict[str]) -> None:
+    def emit_card_from_name(self, dico: dict[str]) -> None:
         lan = dico["exp"].name.split("_")[1].lower()
         exp = dico["exp"].value
         card_number = dico["card_id"]
@@ -50,8 +46,8 @@ class FetchArtWorker(QtCore.QObject):
         url = data["data"][0]["attributes"]["artFront"]["data"]["attributes"][
             "formats"
         ]["card"]["url"]
-        self.process2(url)
+        self.emit_card_from_url(url)
 
-    def process2(self, url: str) -> None:
+    def emit_card_from_url(self, url: str) -> None:
         img = np_from_url(url)
         self.frame_ready.emit(img, Meta(0))

@@ -6,9 +6,10 @@ from core.pipeline.base import Pipeline
 from core.api.interfaces import IFrameSource
 from collections.abc import Iterable
 
+
 class DetectCardWorker(QtCore.QObject):
     frames_ready = QtCore.Signal(Frame, Meta, Frame, Meta)  # (QImage, meta)
-    settings_update = QtCore.Signal(Expansion, int)
+    card_detected = QtCore.Signal(Expansion, int)
     finished = QtCore.Signal()
 
     def __init__(
@@ -18,7 +19,7 @@ class DetectCardWorker(QtCore.QObject):
     ) -> None:
         super().__init__()
         self._running = False
-        self.default_image = cv2.imread("yoda.png")
+        self._default_image = cv2.imread("yoda.png")
         self._source = source
         self._pipeline_main = pipelines["pipeline_main"]
         self._pipeline_side = pipelines["pipeline_side"]
@@ -54,7 +55,7 @@ class DetectCardWorker(QtCore.QObject):
                         2,
                     )
                 except NoCardDetectedError:
-                    side_frame = self.default_image
+                    side_frame = self._default_image
                     side_meta = raw_meta
                     cv2.putText(
                         out_frame,

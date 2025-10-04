@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from core.api.types import Frame, Meta
-    import numpy as np
 
 
 class NullSink(IFrameSink):
@@ -29,9 +28,10 @@ class VideoWriterSink(IFrameSink):
         self._path = Path(path)
         self._writer = None
         self._fps = fps
+        self._closed = True
 
     def open(self) -> None:
-        pass
+        self._closed = False
 
     def connect(self, slot: callable) -> None:
         pass
@@ -42,11 +42,14 @@ class VideoWriterSink(IFrameSink):
             self._writer = cv2.VideoWriter(str(self._path), fourcc, self._fps, (w, h))
 
     def push(self, item: Frame, _: Meta) -> None:
+        if self._closed:
+            return
         # item doit être BGR uint8 shape (H,W,3)
         self._ensure(item.shape[1], item.shape[0])
         self._writer.write(item)
 
     def close(self) -> None:
+        self._closed = True
         if self._writer:
             self._writer.release()
             self._writer = None

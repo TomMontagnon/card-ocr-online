@@ -19,8 +19,6 @@ from core.pipeline.stages.optic_char_recog import (
 from apps.gui_qt.qt_ui_sink import QtUISink
 
 
-
-
 def main() -> None:
     app = QtWidgets.QApplication(sys.argv)
 
@@ -30,7 +28,7 @@ def main() -> None:
     card_id_zoom_view = VideoView()
     card_artwork_view = VideoView()
     toolbar = QtWidgets.QToolBar("Controls")
-    setting_widget = SettingsWidget(Expansion)
+    settings_widget = SettingsWidget(Expansion)
     add_card_widget = AddHistoryWidget()
     btn_start = QtGui.QAction("Start", win)
     btn_stop = QtGui.QAction("Stop", win)
@@ -40,7 +38,7 @@ def main() -> None:
 
     side_box = QtWidgets.QVBoxLayout()
     side_box.addWidget(card_id_zoom_view, 1)
-    side_box.addWidget(setting_widget, 1)
+    side_box.addWidget(settings_widget, 1)
     side_box.addWidget(card_artwork_view, 3)
     side_box.addWidget(add_card_widget, 1)
 
@@ -82,8 +80,8 @@ def main() -> None:
     sinks["sink_main"].connect(main_cam_view.set_frame)
     sinks["sink_side"].connect(card_id_zoom_view.set_frame)
     sinks["sink_artwork"].connect(card_artwork_view.set_frame)
-    ctrl.worker.settings_update.connect(setting_widget.set_value)
-    setting_widget.connect(ctrl.worker2.process)
+    ctrl.worker.card_detected.connect(settings_widget.set_value)
+    settings_widget.settings_changed.connect(ctrl.worker2.emit_card_from_name)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)

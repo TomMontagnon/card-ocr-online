@@ -19,18 +19,30 @@ class AppController(QtCore.QObject):
         self,
         source: IFrameSource,
         pipelines: Iterable[Pipeline],
-        sinks: Iterable[IFrameSink],
+        sinks : Iterable[IFrameSink],
         parent: QtCore.QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._source = source
-        self._pipelines = pipelines
         self._main_cam_sink = sinks["sink_main"]
         self._card_id_zoom_sink = sinks["sink_side"]
         self._card_artwork_sink = sinks["sink_artwork"]
 
-        self._thread = None
-        self._thread2 = None
+        # DETECT_CARD_WORKER
+        self._thread = QtCore.QThread(self)
+        self.worker = DetectCardWorker(source, pipelines)
+        self.worker.moveToThread(self._thread)
+        self.worker.frames_ready.connect(self._push)
+        self._thread.started.connect(self.worker.run)
+
+        # FETCH_ARTWORK_WORKER
+        self._thread2 = QtCore.QThread(self)
+        self.worker2 = FetchArtWorker()
+        self.worker2.moveToThread(self._thread2)
+        self.worker2.frame_ready.connect(self._card_artwork_sink.push)
+
+        # CONNEXIONS
+
         self.start()
 
     def _push(
@@ -43,27 +55,15 @@ class AppController(QtCore.QObject):
         self._main_cam_sink.open()
         self._card_id_zoom_sink.open()
         self._card_artwork_sink.open()
+        self._thread2.start()
         self._source.start()
-
-        # DETECT_CARD_WORKER
-        if self._thread is None or not self._thread.isRunning():
-            self.worker = DetectCardWorker(self._source, self._pipelines)
-            self.worker.frames_ready.connect(self._push)
-            self._thread = QtCore.QThread(self)
-            self.worker.moveToThread(self._thread)
-            self._thread.started.connect(self.worker.run)
-            self._thread.start()
-
-        # FETCH_ARTWORK_WORKER
-        if self._thread2 is None or not self._thread2.isRunning():
-            self.worker2 = FetchArtWorker()
-            self.worker2.frame_ready.connect(self._card_artwork_sink.push)
-            self._thread2 = QtCore.QThread(self)
-            self.worker2.moveToThread(self._thread2)
-            self._thread2.start()
+        if not self._thread.isRunning():
+            self._thread.start()  # Auto start du worker
 
     def stop(self) -> None:
-        QtCore.QMetaObject.invokeMethod(self.worker, "stop", QtCore.Qt.QueuedConnection)
+        QtCore.QMetaObject.invokeMethod(
+            self.worker, "stop", QtCore.Qt.QueuedConnection
+        )
         self._thread.quit()
         self._thread.wait()
 
