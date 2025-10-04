@@ -1,138 +1,76 @@
 from __future__ import annotations
-import threading
-import cv2
-# import pdb
 from PySide6 import QtCore
-from apps.gui_qt.qt_ui_sink import QtUISink
-from core.io.sinks import CompositeSink, VideoWriterSink
-from core.api.types import Expansion, NoCardDetectedError
-from core.utils.fetch_artwork import FetchArtwork
-from core.utils.imaging import np_from_url
 
+# from core.io.sinks import CompositeSink, VideoWriterSink
+from apps.gui_qt.workers.detect_card_worker import DetectCardWorker
+from apps.gui_qt.workers.fetch_art_worker import FetchArtWorker
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from core.api.types import Frame, Meta
     from core.pipeline.base import Pipeline
     from core.api.interfaces import IFrameSource
-    from apps.widgets.settings_widget import SettingsWidget
+    from core.api.interfaces import IFrameSink
+    from collections.abc import Iterable
 
 
 class AppController(QtCore.QObject):
     def __init__(
         self,
         source: IFrameSource,
-        pipeline_main: Pipeline,
-        pipeline_side: Pipeline,
-        pipeline_ocr: Pipeline,
-        setting_widget: SettingsWidget,
+        pipelines: Iterable[Pipeline],
+        sinks: Iterable[IFrameSink],
         parent: QtCore.QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self._source = source
-        self._pipeline_main = pipeline_main
-        self._pipeline_side = pipeline_side
-        self._pipeline_ocr = pipeline_ocr
-        self._stop_evt = threading.Event()
-        self._thread: threading.Thread | None = None
-        self.setting_widget = setting_widget
-        self.main_cam_sink = QtUISink()
-        self.card_id_zoom_sink = QtUISink()
-        self.card_artwork_sink = QtUISink()
-        self.image = self.image = np_from_url(
-            "https://cdn.starwarsunlimited.com/SWH_01fr_045_Yoda_477278dec2.png"
-        )
-        self.default_art_url = (
-            "https://cdn.starwarsunlimited.com/SWH_01fr_045_Yoda_477278dec2.png"
-        )
+        self._pipelines = pipelines
+        self._main_cam_sink = sinks["sink_main"]
+        self._card_id_zoom_sink = sinks["sink_side"]
+        self._card_artwork_sink = sinks["sink_artwork"]
 
-        self.fetchArt = FetchArtwork()
-        self.setting_widget.connect(self.fetchArt.process)
-        self.fetchArt.connect(self.card_artwork_sink.push)
+        self._thread = None
+        self._thread2 = None
         self.start()
 
+    def _push(
+        self, main_frame: Frame, main_meta: Meta, side_frame: Frame, side_meta: Meta
+    ) -> None:
+        self._main_cam_sink.push(main_frame, main_meta)
+        self._card_id_zoom_sink.push(side_frame, side_meta)
+
     def start(self) -> None:
-        if self._thread and self._thread.is_alive():
-            return
-        self._stop_evt.clear()
-        self._thread = threading.Thread(target=self._loop, daemon=True)
-        self._thread.start()
+        self._main_cam_sink.open()
+        self._card_id_zoom_sink.open()
+        self._card_artwork_sink.open()
+        self._source.start()
+
+        # DETECT_CARD_WORKER
+        if self._thread is None or not self._thread.isRunning():
+            self.worker = DetectCardWorker(self._source, self._pipelines)
+            self.worker.frames_ready.connect(self._push)
+            self._thread = QtCore.QThread(self)
+            self.worker.moveToThread(self._thread)
+            self._thread.started.connect(self.worker.run)
+            self._thread.start()
+
+        # FETCH_ARTWORK_WORKER
+        if self._thread2 is None or not self._thread2.isRunning():
+            self.worker2 = FetchArtWorker()
+            self.worker2.frame_ready.connect(self._card_artwork_sink.push)
+            self._thread2 = QtCore.QThread(self)
+            self.worker2.moveToThread(self._thread2)
+            self._thread2.start()
 
     def stop(self) -> None:
-        # 1. Signaler l'arrêt
-        self._stop_evt.set()
-        # 2. Attendre la fin du thread
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=2.0)
+        QtCore.QMetaObject.invokeMethod(self.worker, "stop", QtCore.Qt.QueuedConnection)
+        self._thread.quit()
+        self._thread.wait()
 
-        # 3. Fermer sinks et source
-        self.main_cam_sink.close()
-        self.card_id_zoom_sink.close()
-        self.card_artwork_sink.close()
+        self._thread2.quit()
+        self._thread2.wait()
+
         self._source.stop()
-
-    def _loop(self) -> None:
-        self._source.start()
-        i = 0
-        try:
-            while not self._stop_evt.is_set():
-                i+=1
-                # if i==84:
-                #     breakpoint()
-                print(i)
-                item = self._source.read()
-                if item is None:
-                    break
-                raw_frame, raw_meta = item
-                try:
-                    edge_frame, edge_meta = self._pipeline_main.run_once(
-                        raw_frame, raw_meta
-                    )
-                    side_frame, side_meta = self._pipeline_side.run_once(
-                        raw_frame, edge_meta
-                    )
-                    # _, ocr_meta = self._pipeline_ocr.run_once(side_frame, side_meta)
-                    self.setting_widget.set_value(Expansion.JTL_FR, 2, auto_detect=True)
-                    # self.setting_widget.set_value(
-                    #     ocr_meta["expansion"], ocr_meta["idcard"], auto_detect=True
-                    # )
-
-                    cv2.polylines(
-                        raw_frame,
-                        [edge_meta.info["quad"].astype(int)],
-                        True,
-                        (0, 255, 0),
-                        3,
-                    )
-                    cv2.putText(
-                        raw_frame,
-                        "Card detected",
-                        (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1,
-                        (0, 255, 0),
-                        2,
-                    )
-
-                except NoCardDetectedError:
-                    side_frame = self.fetchArt.process2(self.default_art_url)
-                    side_meta = raw_meta
-                    cv2.putText(
-                        raw_frame,
-                        "No card",
-                        (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1,
-                        (0, 0, 255),
-                        2,
-                    )
-
-                # print("CTRL Raw: ", raw_frame.shape)
-                # print("CTRL Side: ", side_frame.shape)
-                # SINK PUSHED
-                self.main_cam_sink.push(raw_frame, raw_meta)
-                self.card_id_zoom_sink.push(side_frame, side_meta)
-                # Expansion, idCard = (Expansion.LOF_FR, 45)#foo2(txt)
-
-                # self.card_artwork_sink.push(self.image, Meta(0))
-        finally:
-            self._source.stop()
+        self._main_cam_sink.close()
+        self._card_id_zoom_sink.close()
+        self._card_artwork_sink.close()

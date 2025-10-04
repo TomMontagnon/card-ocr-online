@@ -90,9 +90,8 @@ class SettingsWidget(QtWidgets.QWidget):
         }
 
     def set_value(
-        self, expansion: Enum | None, id_card: int, *, auto_detect: bool
-    ) -> None:
-        self.toggle_auto.setChecked(auto_detect)
+        self, expansion: Enum | None, id_card: int) -> None:
+        # self.toggle_auto.setChecked(auto_detect)
         if expansion is not None:
             # rechercher l'index porteur de ce member
             for i in range(self.combo_enum.count()):

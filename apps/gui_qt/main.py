@@ -1,6 +1,11 @@
-from __future__ import annotations
 import sys
 from PySide6 import QtWidgets, QtGui
+from apps.gui_qt.widgets.video_view import VideoView
+from apps.gui_qt.widgets.settings_widget import SettingsWidget
+from core.api.types import Expansion
+from apps.gui_qt.widgets.add_cards_widget import AddHistoryWidget
+
+from apps.gui_qt.controller import AppController
 from core.io.sources import RtspSource, CameraSource, VideoFileSource
 from core.pipeline.base import Pipeline
 from core.pipeline.stages.card_detector import CardDetectorStage, EdgeExtractionStage
@@ -11,13 +16,9 @@ from core.pipeline.stages.optic_char_recog import (
     OcrPrintResultsStage,
     OcrProcessStage,
 )
+from apps.gui_qt.qt_ui_sink import QtUISink
 
 
-from apps.gui_qt.widgets.video_view import VideoView
-from apps.gui_qt.widgets.settings_widget import SettingsWidget
-from apps.gui_qt.widgets.add_cards_widget import AddHistoryWidget
-from apps.gui_qt.controller import AppController
-from core.api.types import Expansion
 
 
 def main() -> None:
@@ -42,9 +43,7 @@ def main() -> None:
     side_box.addWidget(setting_widget, 1)
     side_box.addWidget(card_artwork_view, 3)
     side_box.addWidget(add_card_widget, 1)
-    # side_box.addWidget(QtWidgets.QLabel(),3)
 
-    # Splitter horizontal: gauche 3/4, droite 1/4
     central_panel = QtWidgets.QWidget()
     main_box = QtWidgets.QHBoxLayout(central_panel)
     main_box.addWidget(main_cam_view, 3)
@@ -55,29 +54,40 @@ def main() -> None:
     win.setWindowTitle("OpenCV + PySide (core découplé)")
     win.show()
 
-    # Wiring
+    # APP CONTROLLER
     # source = CameraSource(0)
     source = VideoFileSource("videos/video1.mp4")
     # source = RtspSource("http://10.170.225.45:8080/video/mjpeg")
-    pipeline_main = Pipeline([EdgeExtractionStage(), CardDetectorStage()])
-    pipeline_side = Pipeline([CardWarpStage(), CardCropStage()])
-    pipeline_ocr = Pipeline(
-        [
-            # OcrPreprocessStage(),
-            # OcrProcessStage(),
-            # OcrExtractTextStage(),
-            # OcrPrintResultsStage(),
-        ]
-    )
-    ctrl = AppController(
-        source, pipeline_main, pipeline_side, pipeline_ocr, setting_widget
-    )
-    ctrl.main_cam_sink.connect(main_cam_view.set_frame)
-    ctrl.card_id_zoom_sink.connect(card_id_zoom_view.set_frame)
-    ctrl.card_artwork_sink.connect(card_artwork_view.set_frame)
+
+    pipelines = {
+        "pipeline_main": Pipeline([EdgeExtractionStage(), CardDetectorStage()]),
+        "pipeline_side": Pipeline([CardWarpStage(), CardCropStage()]),
+        "pipeline_ocr": Pipeline(
+            [
+                # OcrPreprocessStage(),
+                # OcrProcessStage(),
+                # OcrExtractTextStage(),
+                # OcrPrintResultsStage(),
+            ]
+        ),
+    }
+    sinks = {
+        "sink_main": QtUISink(),
+        "sink_side": QtUISink(),
+        "sink_artwork": QtUISink(),
+    }
+    ctrl = AppController(source, pipelines, sinks)
+
+    # WIRING
+    sinks["sink_main"].connect(main_cam_view.set_frame)
+    sinks["sink_side"].connect(card_id_zoom_view.set_frame)
+    sinks["sink_artwork"].connect(card_artwork_view.set_frame)
+    ctrl.worker.settings_update.connect(setting_widget.set_value)
+    setting_widget.connect(ctrl.worker2.process)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
+
     sys.exit(app.exec())
 
 

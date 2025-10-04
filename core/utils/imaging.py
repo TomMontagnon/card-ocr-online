@@ -15,6 +15,8 @@ from PySide6 import QtGui
 def np_to_qimage_bgr(bgr: np.ndarray) -> QtGui.QImage:
     h, w, _ = bgr.shape
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+
+    # print("imaging : ", bgr.shape)
     qimg = QtGui.QImage(rgb.data, w, h, 3*w, QtGui.QImage.Format_RGB888)
     return qimg.copy()  # copie pour décorréler du buffer numpy
 
