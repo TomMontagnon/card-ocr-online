@@ -87,10 +87,10 @@ class SettingsWidget(QtWidgets.QWidget):
             "card_id": str(self.integer_value()),
         }
 
-    def set_value(self, expansion: Enum | None, id_card: int) -> None:
-        if expansion is not None:
+    def set_value_auto(self, expansion: Enum, id_card: int) -> None:
+        if self.is_auto():
             for i in range(self._combo_enum.count()):
                 if self._combo_enum.itemData(i) == expansion:
                     self._combo_enum.setCurrentIndex(i)
                     break
-        self._spin_int.setValue(id_card)
+            self._spin_int.setValue(id_card)

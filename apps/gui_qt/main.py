@@ -13,12 +13,9 @@ from core.pipeline.stages.card_format import CardWarpStage, CardCropStage
 from core.pipeline.stages.optic_char_recog import (
     OcrExtractTextStage,
     OcrPreprocessStage,
-    OcrPrintResultsStage,
     OcrProcessStage,
 )
 from apps.gui_qt.qt_ui_sink import QtUISink
-
-
 
 
 def main() -> None:
@@ -35,7 +32,7 @@ def main() -> None:
     side_panel_height = int(default_height)
 
     win = QtWidgets.QMainWindow()
-    win.setWindowTitle("OpenCV + PySide (core découplé)")
+    win.setWindowTitle("Starwars Unlimited cards detector 1.0")
 
     # ====================
     # Main Widgets
@@ -68,7 +65,6 @@ def main() -> None:
 
     btn_source.triggered.connect(on_source)
 
-
     # ====================
     # Side panel
     # ====================
@@ -100,20 +96,14 @@ def main() -> None:
 
     win.show()
 
-    # APP CONTROLLER
-    # source = CameraSource(0)
-    # source = VideoFileSource("videos/video1.mp4")
-    # source = RtspSource("http://10.170.225.45:8080/video/mjpeg")
-
     pipelines = {
         "pipeline_main": Pipeline([EdgeExtractionStage(), CardDetectorStage()]),
         "pipeline_side": Pipeline([CardWarpStage(), CardCropStage()]),
         "pipeline_ocr": Pipeline(
             [
-                # OcrPreprocessStage(),
-                # OcrProcessStage(),
-                # OcrExtractTextStage(),
-                # OcrPrintResultsStage(),
+                OcrPreprocessStage(),
+                OcrProcessStage(),
+                OcrExtractTextStage(),
             ]
         ),
     }
@@ -128,13 +118,12 @@ def main() -> None:
     sinks["sink_main"].connect(main_cam_view.set_frame)
     sinks["sink_side"].connect(card_id_zoom_view.set_frame)
     sinks["sink_artwork"].connect(card_artwork_view.set_frame)
-    ctrl.worker.card_detected.connect(settings_widget.set_value)
+    ctrl.worker.card_detected.connect(settings_widget.set_value_auto)
     settings_widget.settings_changed.connect(ctrl.worker2.emit_card_from_name)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
 
-    # ctrl.worker.card_detected.emit(Expansion.JTL_FR, 3)
     sys.exit(app.exec())
 
 

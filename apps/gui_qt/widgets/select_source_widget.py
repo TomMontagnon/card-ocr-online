@@ -3,10 +3,11 @@ from PySide6 import QtWidgets, QtCore
 from core.api.interfaces import IFrameSource
 from core.io.sources import RtspSource, CameraSource, VideoFileSource
 
+
 class SourceSelector(QtWidgets.QWidget):
     source_selected = QtCore.Signal(IFrameSource)  # Émet la source choisie
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.setWindowTitle("Choisir la source")
@@ -27,7 +28,7 @@ class SourceSelector(QtWidgets.QWidget):
         video_btn.clicked.connect(self._choose_video)
         layout.addWidget(video_btn)
 
-    def _choose_camera(self):
+    def _choose_camera(self) -> None:
         cameras = self._list_cameras()
         if not cameras:
             QtWidgets.QMessageBox.warning(
@@ -39,21 +40,47 @@ class SourceSelector(QtWidgets.QWidget):
             self, "Choisir une caméra", "Caméras disponibles:", cameras, 0, False
         )
         if ok:
-            index = int(cam.split()[0])  # "0 - Logitech"
+            index = int(cam.split()[0])
             source = CameraSource(index)
             self.source_selected.emit(source)
             print(("camera", index))
             self.close()
 
-    def _choose_rtsp(self):
-        text, ok = QtWidgets.QInputDialog.getText(self, "RTSP", "Adresse RTSP:")
-        if ok and text:
-            source = RtspSource(text)
-            self.source_selected.emit(source)
-            print(("rtsp", text))
-            self.close()
+    def _choose_rtsp(self) -> None:
+        # Crée une boîte de dialogue personnalisée plus flexible
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Entrer l'adresse RTSP / MJPEG")
 
-    def _choose_video(self):
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        label = QtWidgets.QLabel("Adresse RTSP / MJPEG :")
+        layout.addWidget(label)
+
+        # Champ de saisie avec valeur par défaut et largeur augmentée
+        line_edit = QtWidgets.QLineEdit(dialog)
+        line_edit.setText("http://:8080/video/mjpeg")
+        line_edit.setMinimumWidth(300)
+        layout.addWidget(line_edit)
+
+        # Boutons OK / Annuler
+        btns = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
+        layout.addWidget(btns)
+
+        btns.accepted.connect(dialog.accept)
+        btns.rejected.connect(dialog.reject)
+
+        # Exécute le dialogue
+        if dialog.exec() == QtWidgets.QDialog.Accepted:
+            text = line_edit.text().strip()
+            if text:
+                source = RtspSource(text)
+                self.source_selected.emit(source)
+                print(("rtsp", text))
+                self.close()
+
+    def _choose_video(self) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Ouvrir une vidéo", "", "Video Files (*.mp4 *.avi *.mkv)"
         )
@@ -63,7 +90,7 @@ class SourceSelector(QtWidgets.QWidget):
             print(("video", path))
             self.close()
 
-    def _list_cameras(self):
+    def _list_cameras(self) -> list:
         """Teste les indices de caméra et renvoie la liste disponible"""
         available = []
         for i in range(5):  # teste les 5 premières caméras

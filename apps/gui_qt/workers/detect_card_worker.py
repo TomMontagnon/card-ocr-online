@@ -5,6 +5,7 @@ from core.api.types import Frame, Meta
 from core.pipeline.base import Pipeline
 from core.api.interfaces import IFrameSource
 from collections.abc import Iterable
+from core.io.sources import VideoFileSource
 
 
 class DetectCardWorker(QtCore.QObject):
@@ -21,6 +22,7 @@ class DetectCardWorker(QtCore.QObject):
         self._default_side_image = cv2.imread("no_zoom_available.png")
         self._default_main_image = cv2.imread("no_image_source_available.png")
         self._source = None
+        self.set_source(VideoFileSource("videos/video0.mp4"))
         self._pipeline_main = pipelines["pipeline_main"]
         self._pipeline_side = pipelines["pipeline_side"]
         self._pipeline_ocr = pipelines["pipeline_ocr"]
@@ -77,18 +79,17 @@ class DetectCardWorker(QtCore.QObject):
                     2,
                 )
             else:
-                side_frame, side_meta = self._pipeline_side.run_once(
-                    raw_frame, edge_meta
-                )
-            # _, ocr_meta = self._pipeline_ocr.run_once(side_frame, side_meta)
-            # self.card_detected.emit(ocr_meta["expansion"], ocr_meta["idcard"])
-            # self.card_detected.emit(Expansion.JTL_FR, 2)
+                tmp_frame, tmp_meta = self._pipeline_side.run_once(raw_frame, edge_meta)
+                side_frame, side_meta = self._pipeline_ocr.run_once(tmp_frame, tmp_meta)
+                if side_meta.info["expansion"] and side_meta.info["idcard"]:
+                    self.card_detected.emit(
+                        side_meta.info["expansion"], side_meta.info["idcard"]
+                    )
             self.frames_ready.emit(out_frame, out_meta, side_frame, side_meta)
 
         self.frames_ready.emit(
             self._default_main_image, Meta(), self._default_side_image, Meta()
         )
-        print("oui")
         self.finished.emit()
 
     @QtCore.Slot()
