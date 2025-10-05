@@ -14,6 +14,7 @@ from core.pipeline.stages.optic_char_recog import (
     OcrExtractTextStage,
     OcrPreprocessStage,
     OcrProcessStage,
+    OcrMeanYield,
 )
 from apps.gui_qt.qt_ui_sink import QtUISink
 
@@ -104,6 +105,7 @@ def main() -> None:
                 OcrPreprocessStage(),
                 OcrProcessStage(),
                 OcrExtractTextStage(),
+                OcrMeanYield(),
             ]
         ),
     }

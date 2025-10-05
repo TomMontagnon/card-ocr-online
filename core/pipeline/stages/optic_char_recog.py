@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import deque, Counter
 from core.api.interfaces import IPipelineStage
 from core.api.types import Expansion
 from paddleocr import PaddleOCR
@@ -9,7 +10,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core.api.types import Frame, Meta
 
-MIN_CONF = 0.9
+MIN_CONF = 0.8
 SEUIL_SCALE = 0.01
 CHAR_HEIGHT_RATIO = 0.5
 
@@ -18,7 +19,6 @@ class OcrPreprocessStage(IPipelineStage):
     def process(self, frame: Frame, meta: Meta) -> (Frame, Meta):
         img_bgr = self._ensure_bgr_u8(frame)
         img_bgr_up = self._scale(img_bgr)
-        print(img_bgr_up.shape)
         # base = self._clahe_bgr(img_bgr_up, clip=2.0, tiles=8)
         # soft = self._unsharp(base, amount=0.4, sigma=1.2)
 
@@ -86,8 +86,6 @@ class OcrExtractTextStage(IPipelineStage):
         idcard = None
 
         annotated_frame = frame.copy()
-        h, w = annotated_frame.shape[:2]
-        font_scale = h / 150.0
 
         for r in results:
             # r.print()
@@ -96,7 +94,7 @@ class OcrExtractTextStage(IPipelineStage):
             rec_texts = r.get("rec_texts")
             rec_scores = r.get("rec_scores")
             polys = r.get("rec_polys")
-            print(rec_texts, rec_scores)
+            # print(rec_texts, rec_scores)
 
             for t, s, p in zip(rec_texts, rec_scores, polys, strict=True):
                 if s >= MIN_CONF:
@@ -109,6 +107,11 @@ class OcrExtractTextStage(IPipelineStage):
                         color=(0, 255, 0),
                         thickness=2,
                     )
+
+                    poly_width = np.linalg.norm(poly[1] - poly[0])
+                    n_chars = max(len(t), 1)  # éviter division par zéro
+                    font_scale = poly_width / n_chars / 30.0
+
                     # texte au-dessus du polygone
                     x, y = poly[3]
                     cv2.putText(
@@ -141,3 +144,30 @@ class OcrExtractTextStage(IPipelineStage):
         # retourne le frame annoté
         return annotated_frame, meta
 
+
+class OcrMeanYield(IPipelineStage):
+    def __init__(self, history_depth: int = 10) -> None:
+        """
+        history_depth : nombre de derniers résultats à retenir
+        """
+        self.history_depth = history_depth
+        self._history: deque[(str, int)] = deque(maxlen=history_depth)
+
+    def process(self, frame: Frame, meta: Meta) -> (Frame, Meta):
+        # récupère le couple courant s'il existe
+        expansion = meta.info.get("expansion")
+        idcard = meta.info.get("idcard")
+
+        if expansion is not None and idcard is not None:
+            # ajoute le couple dans l'historique
+            self._history.append((expansion, idcard))
+
+        if self._history:
+            # calcul du couple le plus fréquent
+            most_common = Counter(self._history).most_common(1)[0][0]
+            meta.info["expansion"], meta.info["idcard"] = most_common
+        else:
+            # pas de données dans l'historique, on laisse les valeurs inchangées
+            pass
+
+        return frame, meta

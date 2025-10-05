@@ -62,11 +62,10 @@ class CardCropStage(IPipelineStage):
         h, w = frame.shape[:2]
         if h == 0 or w == 0:
             return None
-        corner = round(0.02 * h)
-        y_deb = h - round(0.065 * h)
-        y_fin = h - corner
+        # corner = round(0.02 * h)
+        y_deb = h - round(0.08 * h)
+        y_fin = h #- corner
         x_deb = round(w * 0.7)
-        x_fin = w - corner
+        x_fin = w #- corner
         out = frame[y_deb:y_fin, x_deb:x_fin, :]
-        print("OUT : ", out.shape)
         return out, meta

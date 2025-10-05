@@ -37,16 +37,31 @@ class SettingsWidget(QtWidgets.QWidget):
         grid.addWidget(self._spin_int, 2, 1)
 
         # Connexions
-        self._toggle_auto.toggled_changed.connect(self._on_auto_changed)
-        self._combo_enum.currentIndexChanged.connect(
-            lambda *_: self.settings_changed.emit(self.value())
-        )
-        self._spin_int.valueChanged.connect(
-            lambda *_: self.settings_changed.emit(self.value())
-        )
+        # self._toggle_auto.toggled_changed.connect(self._on_auto_changed)
+        # self._combo_enum.currentIndexChanged.connect(
+        #     lambda *_: self.settings_changed.emit(self.value())
+        # )
+        # self._spin_int.valueChanged.connect(
+        #     lambda *_: self.settings_changed.emit(self.value())
+        # )
 
         # Initial state
         self._apply_auto_state(self._toggle_auto.isChecked())
+
+        # Timer pour grouper les changements
+        self._emit_timer = QtCore.QTimer(self)
+        self._emit_timer.setSingleShot(True)
+        self._emit_timer.timeout.connect(lambda: self.settings_changed.emit(self.value()))
+
+        # Connexions modifiées
+        self._combo_enum.currentIndexChanged.connect(self._schedule_emit)
+        self._spin_int.valueChanged.connect(self._schedule_emit)
+        self._toggle_auto.toggled_changed.connect(self._on_auto_changed)
+
+    def _schedule_emit(self, *args):
+        """Planifie un emit unique dans le prochain cycle d'événements."""
+        if not self._emit_timer.isActive():
+            self._emit_timer.start(0)
 
     # Slots / internals --------------------------------------------------------
 
