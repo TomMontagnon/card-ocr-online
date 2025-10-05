@@ -46,7 +46,9 @@ class CardCropStage(IPipelineStage):
         h, w = frame.shape[:2]
         if h == 0 or w == 0:
             return None
-        band_h = max(1, int(round(0.07 * h)))  # 5% de la hauteur, au moins 1 px
-        y0 = max(0, h - band_h)
-        x0 = 3 * w // 4  # moitié droite
-        return frame[y0:h, x0:w, :], meta
+        band_h = max(1, int(round(0.065 * h)))
+        y_deb = max(0, h - band_h)
+        y_fin = h
+        x_deb = int(w * 0.7)
+        x_fin = w
+        return frame[y_deb:y_fin, x_deb:x_fin, :], meta

@@ -50,4 +50,4 @@ class FetchArtWorker(QtCore.QObject):
 
     def emit_card_from_url(self, url: str) -> None:
         img = np_from_url(url)
-        self.frame_ready.emit(img, Meta(0))
+        self.frame_ready.emit(img, Meta())

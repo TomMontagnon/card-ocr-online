@@ -8,7 +8,7 @@ Frame = np.ndarray  # BGR uint8 par convention
 
 @dataclass
 class Meta:
-    ts_ms: int
+    ts_ms: int = 0
     info: dict[str, Any] = field(default_factory=dict)
     state_OK : bool = True
 
@@ -92,4 +92,7 @@ class Expansion(Enum):
 
 
 class NoCardDetectedError(Exception):
+    pass
+
+class NoSourceAvailableError(Exception):
     pass

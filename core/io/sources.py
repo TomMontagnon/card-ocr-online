@@ -2,7 +2,7 @@ from __future__ import annotations
 import cv2
 import time
 from core.api.interfaces import IFrameSource
-from core.api.types import Frame, Meta
+from core.api.types import Frame, Meta, NoSourceAvailableError
 
 
 class CameraSource(IFrameSource):
@@ -20,13 +20,14 @@ class CameraSource(IFrameSource):
         if self._height:
             self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self._height)
 
-    def read(self) -> tuple[Frame, Meta] | None:
+    def read(self) -> tuple[Frame, Meta]:
         if self._cap is None:
             m = "self.cap not initiated"
-            raise ValueError(m)
+            raise NoSourceAvailableError(m)
         ok, frame = self._cap.read()
         if not ok:
-            return None
+            m = "read is not ok"
+            raise NoSourceAvailableError(m)
         return frame, Meta(int(time.time() * 1000))
 
     def stop(self) -> None:
@@ -50,13 +51,14 @@ class RtspSource(IFrameSource):
         if self._height:
             self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self._height)
 
-    def read(self) -> tuple[Frame, Meta] | None:
+    def read(self) -> tuple[Frame, Meta]:
         if self._cap is None:
             m = "self.cap not initiated"
-            raise ValueError(m)
+            raise NoSourceAvailableError(m)
         ok, frame = self._cap.read()
         if not ok:
-            return None
+            m = "read is not ok"
+            raise NoSourceAvailableError(m)
         return frame, Meta(int(time.time() * 1000))
 
     def stop(self) -> None:
@@ -76,18 +78,20 @@ class VideoFileSource(IFrameSource):
         self._cap = cv2.VideoCapture(self._path)
         self._last_time = time.time()
 
-    def read(self) -> tuple[Frame, Meta] | None:
+    def read(self) -> tuple[Frame, Meta]:
         if self._cap is None:
             m = "self.cap not initiated"
-            raise ValueError(m)
-        ok, frame = self._cap.read()
+            raise NoSourceAvailableError(m)
 
-        if not ok:
-            # on est arrivé à la fin : repartir au début
+        total = int(self._cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        current = int(self._cap.get(cv2.CAP_PROP_POS_FRAMES))
+        if total > 0 and current >= total - 1:
             self._cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            ok, frame = self._cap.read()
-            if not ok:
-                return None
+
+        ok, frame = self._cap.read()
+        if not ok:
+            m = "read is not ok"
+            raise NoSourceAvailableError(m)
 
         now = time.time()
         if self._last_time is not None:

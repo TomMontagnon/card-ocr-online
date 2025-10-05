@@ -1,12 +1,12 @@
 import sys
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui
 from apps.gui_qt.widgets.video_view import VideoView
 from apps.gui_qt.widgets.settings_widget import SettingsWidget
 from core.api.types import Expansion
 from apps.gui_qt.widgets.add_cards_widget import AddHistoryWidget
+from apps.gui_qt.widgets.select_source_widget import SourceSelector
 
 from apps.gui_qt.controller import AppController
-from core.io.sources import RtspSource, CameraSource, VideoFileSource
 from core.pipeline.base import Pipeline
 from core.pipeline.stages.card_detector import CardDetectorStage, EdgeExtractionStage
 from core.pipeline.stages.card_format import CardWarpStage, CardCropStage
@@ -19,6 +19,8 @@ from core.pipeline.stages.optic_char_recog import (
 from apps.gui_qt.qt_ui_sink import QtUISink
 
 
+
+
 def main() -> None:
     app = QtWidgets.QApplication(sys.argv)
 
@@ -29,7 +31,7 @@ def main() -> None:
     default_width = int(screen_width * 0.9)
     side_panel_width = int(default_width // 5)
 
-    default_height = int(((default_width-side_panel_width) * 9 / 16))
+    default_height = int((default_width - side_panel_width) * 9 / 16)
     side_panel_height = int(default_height)
 
     win = QtWidgets.QMainWindow()
@@ -53,6 +55,19 @@ def main() -> None:
     toolbar.addAction(btn_start)
     toolbar.addAction(btn_stop)
     win.addToolBar(toolbar)
+
+    btn_source = QtGui.QAction("Choisir Source", win)
+    toolbar.addAction(btn_source)
+    selector_widget = None
+
+    def on_source() -> None:
+        nonlocal selector_widget, ctrl
+        selector_widget = SourceSelector()
+        selector_widget.source_selected.connect(ctrl.set_source)
+        selector_widget.show()
+
+    btn_source.triggered.connect(on_source)
+
 
     # ====================
     # Side panel
@@ -87,7 +102,7 @@ def main() -> None:
 
     # APP CONTROLLER
     # source = CameraSource(0)
-    source = VideoFileSource("videos/video1.mp4")
+    # source = VideoFileSource("videos/video1.mp4")
     # source = RtspSource("http://10.170.225.45:8080/video/mjpeg")
 
     pipelines = {
@@ -107,7 +122,7 @@ def main() -> None:
         "sink_side": QtUISink(),
         "sink_artwork": QtUISink(),
     }
-    ctrl = AppController(source, pipelines, sinks)
+    ctrl = AppController(pipelines, sinks)
 
     # WIRING
     sinks["sink_main"].connect(main_cam_view.set_frame)
@@ -119,6 +134,7 @@ def main() -> None:
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
 
+    # ctrl.worker.card_detected.emit(Expansion.JTL_FR, 3)
     sys.exit(app.exec())
 
 
