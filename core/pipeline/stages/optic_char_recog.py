@@ -125,20 +125,26 @@ class OcrExtractTextStage(IPipelineStage):
                         cv2.LINE_AA,
                     )
 
-                    txt = t.split("/")[0]
-                    if txt.isdecimal():
-                        idcard = int(txt)
-                        continue
                     txt = (
-                        t.upper()
-                        .replace("-", "_")
-                        .replace("•", "_")
-                        .replace("·", "_")
-                        .replace("0", "O")
+                        t.upper().replace("-", "_").replace("•", "_").replace("·", "_")
                     )
-                    if txt in Expansion.__members__:
+                    if "_" in txt and txt in Expansion.__members__:
+                        txt = txt.replace("0", "O")
                         expansion = Expansion[txt]
+                    else:
+                        l = t.split("/")[0]
+                        if len(l) == 1:
+                            # HYPERSPACE ? FOIL ?
+                            pass
+                        else:
+                            txt = l[0]
+                            if txt[0] == "T":
+                                # TOKEN
+                                token = True
+                            else:
+                                idcard = int(txt)
 
+        meta.info["token"] = token
         meta.info["idcard"] = idcard
         meta.info["expansion"] = expansion
         # retourne le frame annoté
