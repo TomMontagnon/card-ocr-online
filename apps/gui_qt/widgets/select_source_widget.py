@@ -10,7 +10,7 @@ class SourceSelector(QtWidgets.QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
-        self.setWindowTitle("Choisir la source")
+        self.setWindowTitle("Source")
         layout = QtWidgets.QVBoxLayout(self)
 
         # Camera

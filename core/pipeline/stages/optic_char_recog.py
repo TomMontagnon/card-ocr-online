@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 MIN_CONF = 0.8
 SEUIL_SCALE = 0.01
-CHAR_HEIGHT_RATIO = 0.5
+CHAR_HEIGHT_RATIO = 0.25
 
 
 class OcrPreprocessStage(IPipelineStage):
@@ -84,6 +84,7 @@ class OcrExtractTextStage(IPipelineStage):
         results = meta.info.get("ocr_results", [])
         expansion = None
         idcard = None
+        token = None
 
         annotated_frame = frame.copy()
 
@@ -132,17 +133,17 @@ class OcrExtractTextStage(IPipelineStage):
                         txt = txt.replace("0", "O")
                         expansion = Expansion[txt]
                     else:
-                        l = t.split("/")[0]
-                        if len(l) == 1:
-                            # HYPERSPACE ? FOIL ?
-                            pass
-                        else:
-                            txt = l[0]
-                            if txt[0] == "T":
-                                # TOKEN
-                                token = True
-                            else:
-                                idcard = int(txt)
+                        txt = t.split("/")[0]
+                        # if len(l) == 1:
+                        #     # HYPERSPACE ? FOIL ?
+                        #     pass
+                        # else:
+                        token = txt[0] == "T"
+                        if token:
+                            txt = txt[1:]
+
+                        if txt.isdecimal():
+                            idcard = int(txt)
 
         meta.info["token"] = token
         meta.info["idcard"] = idcard

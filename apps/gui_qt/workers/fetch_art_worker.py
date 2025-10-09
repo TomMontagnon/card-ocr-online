@@ -32,12 +32,12 @@ class FetchArtWorker(QtCore.QObject):
             ("locale", lan),
             ("orderBy[expansion][id]", "asc"),
             ("sort[0]", "type.sortValue:asc,expansion.sortValue:desc,cardNumber:asc"),
-            ("filters[$and][0][variantOf][id][$null]", "true"),
+            # ("filters[$and][0][variantOf][id][$null]", "true"),
             ("filters[$and][1][cardNumber][$eq]", card_number),
-            ("aspectMethod", "0"),
-            ("aspect", "0"),
-            ("traitMethod", "0"),
-            ("trait", "0"),
+            # ("aspectMethod", "0"),
+            # ("aspect", "0"),
+            # ("traitMethod", "0"),
+            # ("trait", "0"),
         ]
         if exp is not None:
             params.append(("filters[$and][2][expansion][id][$eq]", exp))

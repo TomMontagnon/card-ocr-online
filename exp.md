@@ -35,3 +35,25 @@ standard : 5 (token)
 C25:
 Standard : 1/5
 
+=======================================================
+
+
+idcard = 100
+id 27524
+
+Foil
+  header > filename = /api/card/details/35070
+  cardnumber = 602
+Hyperspace
+  header > filename = /api/card/details/33879
+  id = 33879
+  attributes.cardNumber = 364
+  attributes.cardCount = 0
+  attributes.cardUid = 4896445854
+  attributes.serialCode = 05020364
+Hyperspace foil
+  header > filename = /api/card/details/36260
+  id = 36260
+  attributes.cardNumber = 840
+  attributes.cardUid = 1179937348
+  attributes.SerialCode = 05320840
