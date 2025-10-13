@@ -25,15 +25,9 @@ class FetchArtWorker:
         # One param per line
         params = [
             ("locale", lan),
-            ("orderBy[expansion][id]", "asc"),
             ("sort[0]", "type.sortValue:asc,expansion.sortValue:desc,cardNumber:asc"),
-            # ("filters[$and][0][variantOf][id][$null]", "true"),
             ("filters[$and][1][cardNumber][$eq]", card_number),
-            # ("filters[$and][2][type][value][$containsi]","Token"),
-            # ("aspectMethod", "0"),
-            # ("aspect", "0"),
-            # ("traitMethod", "0"),
-            # ("trait", "0"),
+            ("filters[$and][2][type][value][$containsi]","Token"),
             ("filters[$and][2][expansion][id][$eq]", exp),
         ]
         # if exp is not None:
@@ -41,7 +35,8 @@ class FetchArtWorker:
         resp = request_url(url, headers, params)
         data = resp.json()
         # print(data["id"])
-        url = data["data"][1]["attributes"]["artFront"]["data"]["attributes"][
+        print(len(data["data"]))
+        url = data["data"][0]["attributes"]["artFront"]["data"]["attributes"][
             "formats"
         ]["card"]["url"]
         return url
@@ -53,7 +48,7 @@ class FetchArtWorker:
 
 foo = FetchArtWorker()
 
-dico = {"exp" : Expansion.SOR_FR,"card_id":100}
+dico = {"exp" : Expansion.LOF_FR,"card_id":1}
 
 res = foo.emit_card_from_name(dico)
 

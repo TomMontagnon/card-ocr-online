@@ -27,20 +27,12 @@ class FetchArtWorker(QtCore.QObject):
             "Referer": "https://starwarsunlimited.com/",
         }
 
-        # One param per line
         params = [
             ("locale", lan),
-            ("orderBy[expansion][id]", "asc"),
             ("sort[0]", "type.sortValue:asc,expansion.sortValue:desc,cardNumber:asc"),
-            # ("filters[$and][0][variantOf][id][$null]", "true"),
             ("filters[$and][1][cardNumber][$eq]", card_number),
-            # ("aspectMethod", "0"),
-            # ("aspect", "0"),
-            # ("traitMethod", "0"),
-            # ("trait", "0"),
+            ("filters[$and][1][expansion][id][$eq]", exp),
         ]
-        if exp is not None:
-            params.append(("filters[$and][2][expansion][id][$eq]", exp))
         resp = request_url(url, headers, params)
         data = resp.json()
         url = data["data"][0]["attributes"]["artFront"]["data"]["attributes"][

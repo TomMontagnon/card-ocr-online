@@ -36,15 +36,6 @@ class SettingsWidget(QtWidgets.QWidget):
         grid.addWidget(self._label_int, 2, 0)
         grid.addWidget(self._spin_int, 2, 1)
 
-        # Connexions
-        # self._toggle_auto.toggled_changed.connect(self._on_auto_changed)
-        # self._combo_enum.currentIndexChanged.connect(
-        #     lambda *_: self.settings_changed.emit(self.value())
-        # )
-        # self._spin_int.valueChanged.connect(
-        #     lambda *_: self.settings_changed.emit(self.value())
-        # )
-
         # Initial state
         self._apply_auto_state(self._toggle_auto.isChecked())
 

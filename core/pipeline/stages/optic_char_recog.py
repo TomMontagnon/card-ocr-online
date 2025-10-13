@@ -19,8 +19,6 @@ class OcrPreprocessStage(IPipelineStage):
     def process(self, frame: Frame, meta: Meta) -> (Frame, Meta):
         img_bgr = self._ensure_bgr_u8(frame)
         img_bgr_up = self._scale(img_bgr)
-        # base = self._clahe_bgr(img_bgr_up, clip=2.0, tiles=8)
-        # soft = self._unsharp(base, amount=0.4, sigma=1.2)
 
         return img_bgr_up, meta
 
@@ -44,18 +42,6 @@ class OcrPreprocessStage(IPipelineStage):
             )
 
         return img
-
-    # def _clahe_bgr(self, img: Frame, clip: float = 2.0, tiles: int = 8) -> Frame:
-    #     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    #     l, a, b = cv2.split(lab)
-    #     clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(tiles, tiles))
-    #     l = clahe.apply(l)
-    #     lab = cv2.merge([l, a, b])
-    #     return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-
-    # def _unsharp(self, img: Frame, amount: float = 0.6, sigma: float = 1.0) -> Frame:
-    #     blur = cv2.GaussianBlur(img, (0, 0), sigma)
-    #     return cv2.addWeighted(img, 1 + amount, blur, -amount, 0)
 
 
 class OcrProcessStage(IPipelineStage):
@@ -84,7 +70,6 @@ class OcrExtractTextStage(IPipelineStage):
         results = meta.info.get("ocr_results", [])
         expansion = None
         idcard = None
-        token = None
 
         annotated_frame = frame.copy()
 
@@ -129,23 +114,24 @@ class OcrExtractTextStage(IPipelineStage):
                     txt = (
                         t.upper().replace("-", "_").replace("•", "_").replace("·", "_")
                     )
-                    if "_" in txt and txt in Expansion.__members__:
-                        txt = txt.replace("0", "O")
-                        expansion = Expansion[txt]
-                    else:
+
+                    if "_" in txt:  # EXPANSION
+                        if txt in Expansion.__members__:
+                            txt = txt.replace("0", "O")
+                            expansion = Expansion[txt]
+                        else:
+                            print(f"ERROR, expansion not recognized : {txt}")
+                    else:  # ID_CARD
                         txt = t.split("/")[0]
-                        # if len(l) == 1:
-                        #     # HYPERSPACE ? FOIL ?
-                        #     pass
-                        # else:
-                        token = txt[0] == "T"
-                        if token:
-                            txt = txt[1:]
+                        if len(txt) > 0 and txt[0] == "T":
+                            print("TOKEN, OSEF")
+                            break
 
                         if txt.isdecimal():
                             idcard = int(txt)
+                        else:
+                            print(f"ERROR, id_card not recognized : {txt}")
 
-        meta.info["token"] = token
         meta.info["idcard"] = idcard
         meta.info["expansion"] = expansion
         # retourne le frame annoté

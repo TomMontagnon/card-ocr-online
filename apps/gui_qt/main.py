@@ -122,6 +122,7 @@ def main() -> None:
     sinks["sink_artwork"].connect(card_artwork_view.set_frame)
     ctrl.worker.card_detected.connect(settings_widget.set_value_auto)
     settings_widget.settings_changed.connect(ctrl.worker2.emit_card_from_name)
+    settings_widget.settings_changed.connect(add_card_widget.set_current_card)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
