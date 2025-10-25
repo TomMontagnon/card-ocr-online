@@ -9,18 +9,16 @@ class HistoryItemWidget(QtWidgets.QWidget):
 
     remove_requested = QtCore.Signal(QtWidgets.QListWidgetItem)
 
-    def __init__(self, text: str, item: QtWidgets.QListWidgetItem, parent=None):
+    def __init__(self, text: str, item: QtWidgets.QListWidgetItem, parent=None) -> None:
         super().__init__(parent)
         self.item = item
         self.count = 1
-
         self.label_text = QtWidgets.QLabel(text)
-        self.label_count = QtWidgets.QLabel("×1")
+        self.label_count = QtWidgets.QLabel(f"x{self.count}")
         self.label_count.setStyleSheet("color: gray; margin-left: 4px;")
 
         self.btn_remove = QtWidgets.QPushButton("-")
         self.btn_remove.setFixedSize(20, 20)
-        self.btn_remove.setVisible(False)  # Caché par défaut
         self.btn_remove.clicked.connect(self._on_remove_clicked)
 
         layout = QtWidgets.QHBoxLayout(self)
@@ -30,27 +28,27 @@ class HistoryItemWidget(QtWidgets.QWidget):
         layout.addWidget(self.btn_remove)
         layout.setContentsMargins(4, 0, 4, 0)
 
-    def increment(self):
+    def increment(self) -> None:
         self.count += 1
-        self.label_count.setText(f"×{self.count}")
+        self.label_count.setText(f"x{self.count}")
         self.btn_remove.setVisible(True)
 
-    def decrement(self):
+    def decrement(self) -> None:
         self.count -= 1
-        self.label_count.setText(f"×{self.count}")
+        self.label_count.setText(f"x{self.count}")
         if self.count <= 0:
             self.remove_requested.emit(self.item)
 
-    def _on_remove_clicked(self):
+    def _on_remove_clicked(self) -> None:
         self.decrement()
 
 
-class AddHistoryWidget(QtWidgets.QWidget):
+class HistoryWidget(QtWidgets.QWidget):
     # Signals
     auto_changed = QtCore.Signal(bool)
     item_added = QtCore.Signal(str)
 
-    def __init__(self, parent=None, max_items: int | None = None) -> None:
+    def __init__(self, max_items: int | None = None, parent=None) -> None:
         super().__init__(parent)
         self._max_items = max_items  # None = unlimited
 
@@ -95,7 +93,7 @@ class AddHistoryWidget(QtWidgets.QWidget):
 
     # -------------------------------------------------------------------------
     def _apply_auto_state(self, auto: bool) -> None:
-        self._btn_add.setEnabled(not auto)
+        # self._btn_add.setEnabled(not auto)
         if hasattr(self._demo_timer, "setRunning"):
             self._demo_timer.setRunning(auto)
         elif auto:
@@ -135,7 +133,7 @@ class AddHistoryWidget(QtWidgets.QWidget):
 
         self.item_added.emit(text)
 
-    def _remove_item(self, item: QtWidgets.QListWidgetItem):
+    def _remove_item(self, item: QtWidgets.QListWidgetItem) -> None:
         row = self._list_history.row(item)
         self._list_history.takeItem(row)
 
@@ -148,7 +146,9 @@ class AddHistoryWidget(QtWidgets.QWidget):
 
         if (
             self._list_history.count() == 0
-            or self._list_history.itemWidget(self._list_history.item(0)).label_text.text()
+            or self._list_history.itemWidget(
+                self._list_history.item(0)
+            ).label_text.text()
             != current_text
         ):
             self._on_add_clicked()
@@ -174,5 +174,5 @@ class AddHistoryWidget(QtWidgets.QWidget):
         for i in range(self._list_history.count()):
             w = self._list_history.itemWidget(self._list_history.item(i))
             if w:
-                result.append(f"{w.label_text.text()} ×{w.count}")
+                result.append(f"{w.label_text.text()} X{w.count}")
         return result

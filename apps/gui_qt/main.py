@@ -3,7 +3,7 @@ from PySide6 import QtWidgets, QtGui
 from apps.gui_qt.widgets.video_view import VideoView
 from apps.gui_qt.widgets.settings_widget import SettingsWidget
 from core.api.types import Expansion
-from apps.gui_qt.widgets.add_cards_widget import AddHistoryWidget
+from apps.gui_qt.widgets.add_cards_widget import HistoryWidget
 from apps.gui_qt.widgets.select_source_widget import SourceSelector
 
 from apps.gui_qt.controller import AppController
@@ -24,7 +24,7 @@ def main() -> None:
 
     screen_geometry = app.primaryScreen().availableGeometry()
     screen_width = screen_geometry.width()
-    screen_height = screen_geometry.height()
+    _screen_height = screen_geometry.height()
 
     default_width = int(screen_width * 0.9)
     side_panel_width = int(default_width // 5)
@@ -42,7 +42,7 @@ def main() -> None:
     card_id_zoom_view = VideoView()
     card_artwork_view = VideoView()
     settings_widget = SettingsWidget(Expansion)
-    add_card_widget = AddHistoryWidget()
+    history_widget = HistoryWidget()
 
     # ====================
     # Toolbar
@@ -73,7 +73,7 @@ def main() -> None:
     side_box_layout.addWidget(card_id_zoom_view, 1)
     side_box_layout.addWidget(settings_widget, 1)
     side_box_layout.addWidget(card_artwork_view, 3)
-    side_box_layout.addWidget(add_card_widget, 1)
+    side_box_layout.addWidget(history_widget, 1)
 
     side_box_widget = QtWidgets.QWidget()
     side_box_widget.setLayout(side_box_layout)
@@ -122,7 +122,7 @@ def main() -> None:
     sinks["sink_artwork"].connect(card_artwork_view.set_frame)
     ctrl.worker.card_detected.connect(settings_widget.set_value_auto)
     settings_widget.settings_changed.connect(ctrl.worker2.emit_card_from_name)
-    settings_widget.settings_changed.connect(add_card_widget.set_current_card)
+    settings_widget.settings_changed.connect(history_widget.set_current_card)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
