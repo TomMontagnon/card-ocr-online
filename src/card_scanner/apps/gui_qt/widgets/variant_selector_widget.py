@@ -2,18 +2,18 @@ from __future__ import annotations
 from PySide6 import QtWidgets, QtCore, QtGui
 from .video_view import VideoView
 from card_scanner.core.api import Frame, Meta
+from importlib import resources
 
 
 class ClickableArea(QtWidgets.QWidget):
     clicked = QtCore.Signal()
 
-    def __init__(self, parent=None, color=None, icon_path=None, icon_size=32):
+    def __init__(self, parent=None, color=None, icon_path=None, icon_size=32) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
         if color:
-            # utile pour le debug, sinon laisse transparent
-            self.setStyleSheet(f"background-color: {color}; border: 2px solid white;")
+            self.setStyleSheet(f"background-color: {color};")
         else:
             self.setStyleSheet("background-color: transparent;")
 
@@ -24,6 +24,7 @@ class ClickableArea(QtWidgets.QWidget):
         # Si un pictogramme est fourni
         if icon_path:
             icon_label = QtWidgets.QLabel()
+            icon_label.setStyleSheet("background: transparent;")
             pixmap = QtGui.QPixmap(icon_path)
             if not pixmap.isNull():
                 pixmap = pixmap.scaled(
@@ -35,17 +36,17 @@ class ClickableArea(QtWidgets.QWidget):
                 icon_label.setAlignment(QtCore.Qt.AlignCenter)
                 layout.addWidget(icon_label)
             else:
-                print(f"⚠️ Impossible de charger le pictogramme : {icon_path}")
+                print(f"Impossible de charger le pictogramme : {icon_path}")
 
     def mousePressEvent(self, event) -> None:
         self.clicked.emit()
 
 
 class VariantSelectorWidget(QtWidgets.QWidget):
-    locked = QtCore.Signal(str)  # émet le nom du variant courant quand on "lock"
+    locked = QtCore.Signal(dict)
     pre_selected = QtCore.Signal(Frame, Meta)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         self.view = VideoView()
@@ -58,9 +59,24 @@ class VariantSelectorWidget(QtWidgets.QWidget):
         self.stack_layout.addWidget(self.view)
 
         # Zones cliquables
-        self.left_area = ClickableArea(self.stack_container, "rgba(255,0,0,0.3)", "")
-        self.right_area = ClickableArea(self.stack_container, "rgba(0,255,0,0.3)", "")
-        self.lock_area = ClickableArea(self.stack_container, "rgba(0,0,255,0.3)", "")
+        with resources.path(
+            "card_scanner.apps.gui_qt.assets.pictos", "left_arrow.png"
+        ) as p:
+            self.left_area = ClickableArea(
+                self.stack_container, "rgba(255,0,0,0.3)", str(p)
+            )
+        with resources.path(
+            "card_scanner.apps.gui_qt.assets.pictos", "right_arrow.png"
+        ) as p:
+            self.right_area = ClickableArea(
+                self.stack_container, "rgba(0,255,0,0.3)", str(p)
+            )
+        with resources.path(
+            "card_scanner.apps.gui_qt.assets.pictos", "lock.png"
+        ) as p:
+            self.lock_area = ClickableArea(
+                self.stack_container, "rgba(0,0,255,0.3)", str(p)
+            )
 
         for area in [self.left_area, self.right_area, self.lock_area]:
             area.setGeometry(0, 0, 0, 0)  # sera mis à jour dans resizeEvent
@@ -76,6 +92,7 @@ class VariantSelectorWidget(QtWidgets.QWidget):
         main_layout.addWidget(self.stack_container)
 
         # Variantes
+        self.dico = None
         self.variants = []
         self.current_index = 0
         self.is_locked = False
@@ -96,18 +113,18 @@ class VariantSelectorWidget(QtWidgets.QWidget):
             (w / 2) - (area_height / 2), h - area_width, area_height, area_width
         )
 
-        # self.left_area.raise_()
-        # self.right_area.raise_()
-        # self.lock_area.raise_()
         super().resizeEvent(event)
 
     # --- logique d'affichage ---
-    def set_variants(self, variants) -> None:
-        print("SET VARIANTS")
+    def set_variants(self, dico : dict, variants : list) -> None:
         """variants: list of (variant_name, np_frame)"""
         self.variants = variants
+        self.dico = dico
         self.current_index = 0
-        self.unlock()
+        if len(self.variants) == 1:
+            self.lock()
+        else:
+            self.unlock()
         self.update_view()
 
     def update_view(self) -> None:
@@ -120,14 +137,12 @@ class VariantSelectorWidget(QtWidgets.QWidget):
         self.pre_selected.emit(frame, Meta(0))
 
     def prev_variant(self) -> None:
-        print("PREV VARIANT")
         if self.is_locked or not self.variants:
             return
         self.current_index = (self.current_index - 1) % len(self.variants)
         self.update_view()
 
     def next_variant(self) -> None:
-        print("NEXT VARIANT")
         if self.is_locked or not self.variants:
             return
         self.current_index = (self.current_index + 1) % len(self.variants)
@@ -148,4 +163,5 @@ class VariantSelectorWidget(QtWidgets.QWidget):
         self.lock_area.hide()
 
         name, _ = self.variants[self.current_index]
-        self.locked.emit(name)
+        self.dico["variant"] = name
+        self.locked.emit(self.dico)

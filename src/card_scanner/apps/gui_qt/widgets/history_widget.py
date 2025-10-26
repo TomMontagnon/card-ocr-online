@@ -12,7 +12,7 @@ class HistoryItemWidget(QtWidgets.QWidget):
     remove_requested = QtCore.Signal(QtWidgets.QListWidgetItem)
 
     def __init__(
-        self, dico: dict, item: QtWidgets.QListWidgetItem, count :int = 1, parent=None
+        self, dico: dict, item: QtWidgets.QListWidgetItem, count: int = 1, parent=None
     ) -> None:
         super().__init__(parent)
         self.item = item
@@ -50,7 +50,7 @@ class HistoryItemWidget(QtWidgets.QWidget):
     def format(self, dico: dict) -> str:
         if not dico:
             return ""
-        return f"{dico['exp']} | {dico['card_id']}"
+        return f"{dico['exp'].name} | {dico['card_id']} | {dico['variant']}"
 
     def is_equal(self, dico: dict) -> bool:
         return dico == self.dico
@@ -128,10 +128,8 @@ class HistoryWidget(QtWidgets.QWidget):
         key = (
             self._current_card["exp"],
             self._current_card["card_id"],
-            self._current_card["is_foil"],
+            self._current_card["variant"],
         )
-
-
 
         if key in self._cards_index:
             # Incrémenter le compteur
@@ -171,7 +169,11 @@ class HistoryWidget(QtWidgets.QWidget):
             removed_item = self._list_history.takeItem(self._list_history.count() - 1)
             removed_widget = self._list_history.itemWidget(removed_item)
             if removed_widget:
-                removed_key = (removed_widget.dico["exp"], removed_widget.dico["card_id"], removed_widget.dico["is_foil"])
+                removed_key = (
+                    removed_widget.dico["exp"],
+                    removed_widget.dico["card_id"],
+                    removed_widget.dico["variant"],
+                )
                 self._cards_index.pop(removed_key, None)
 
     def _remove_item(self, item: QtWidgets.QListWidgetItem) -> None:
@@ -181,7 +183,7 @@ class HistoryWidget(QtWidgets.QWidget):
             key = (
                 widget.dico["exp"],
                 widget.dico["card_id"],
-                widget.dico["is_foil"],
+                widget.dico["variant"],
             )
             self._cards_index.pop(key, None)
         row = self._list_history.row(item)

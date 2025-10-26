@@ -114,15 +114,17 @@ def main() -> None:
         "sink_side": QtUISink(),
         "sink_artwork": QtUISink(),
     }
-    ctrl = AppController(pipelines, sinks, card_artwork_widget)
+    ctrl = AppController(pipelines, sinks)
 
     # WIRING
     sinks["sink_main"].connect(main_cam_view.set_frame)
     sinks["sink_side"].connect(card_id_zoom_view.set_frame)
     sinks["sink_artwork"].connect(card_artwork_view.set_frame)
     ctrl.worker.card_detected.connect(settings_widget.set_value_auto)
-    settings_widget.settings_changed.connect(ctrl.worker2.emit_card_from_name)
-    settings_widget.settings_changed.connect(history_widget.set_current_card)
+    ctrl.worker2.arts_ready.connect(card_artwork_widget.set_variants)
+    card_artwork_widget.pre_selected.connect(sinks["sink_artwork"].push)
+    settings_widget.settings_changed.connect(ctrl.worker2.get_arts)
+    card_artwork_widget.locked.connect(history_widget.set_current_card)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)

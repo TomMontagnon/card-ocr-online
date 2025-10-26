@@ -4,7 +4,6 @@ from card_scanner.apps.gui_qt.workers import DetectCardWorker, FetchArtsWorker
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from card_scanner.apps.gui_qt.widgets import VariantSelectorWidget
     from card_scanner.core.api import Frame, Meta, IFrameSink, IFrameSource
     from card_scanner.core.pipeline import Pipeline
     from collections.abc import Iterable
@@ -17,7 +16,6 @@ class AppController(QtCore.QObject):
         self,
         pipelines: Iterable[Pipeline],
         sinks: Iterable[IFrameSink],
-        variant_selector: VariantSelectorWidget,
         parent: QtCore.QObject | None = None,
     ) -> None:
         super().__init__(parent)
@@ -25,7 +23,6 @@ class AppController(QtCore.QObject):
         self._main_cam_sink = sinks["sink_main"]
         self._card_id_zoom_sink = sinks["sink_side"]
         self._card_artwork_sink = sinks["sink_artwork"]
-        self._variant_selector = variant_selector
 
         # DETECT_CARD_WORKER
         self._thread = QtCore.QThread(self)
@@ -38,12 +35,9 @@ class AppController(QtCore.QObject):
         self._thread2 = QtCore.QThread(self)
         self.worker2 = FetchArtsWorker()
         self.worker2.moveToThread(self._thread2)
-        self.worker2.arts_ready.connect(self._variant_selector.set_variants)
 
         # CONNEXIONS
-
         self.source_changed.connect(self.worker.set_source)
-        self._variant_selector.pre_selected.connect(self._card_artwork_sink.push)
         self.start()
 
     def _push(

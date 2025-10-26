@@ -128,7 +128,7 @@ class OcrExtractTextStage(IPipelineStage):
                     else:  # ID_CARD
                         txt = t.split("/")[0]
                         if len(txt) > 0 and txt[0] == "T":
-                            print("TOKEN, OSEF")
+                            print("TOKEN, ignored")
                             break
 
                         if txt.isdecimal():

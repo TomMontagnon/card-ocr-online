@@ -4,12 +4,12 @@ from PySide6 import QtCore
 
 
 class FetchArtsWorker(QtCore.QObject):
-    arts_ready = QtCore.Signal(list)
+    arts_ready = QtCore.Signal(dict, list)
 
     def __init__(self) -> None:
         super().__init__()
 
-    def emit_card_from_name(self, dico: dict[str]) -> None:
+    def get_arts(self, dico: dict[str]) -> None:
         lan = dico["exp"].name.split("_")[1].lower()
         exp = dico["exp"].value
         card_number = dico["card_id"]
@@ -28,6 +28,7 @@ class FetchArtsWorker(QtCore.QObject):
             ("sort[0]", "type.sortValue:asc,expansion.sortValue:desc,cardNumber:asc"),
             ("filters[$and][1][cardNumber][$eq]", card_number),
             ("filters[$and][1][expansion][id][$eq]", exp),
+            ("filters[$and][1][type][value][$notContainsi]", "Token"),
         ]
         resp = request_url(url, headers, params)
         data = resp.json()
@@ -38,4 +39,4 @@ class FetchArtsWorker(QtCore.QObject):
             ]
             variant = d["attributes"]["variantTypes"]["data"][0]["attributes"]["name"]
             arr.append((variant, np_from_url(url)))
-        self.arts_ready.emit(arr)
+        self.arts_ready.emit(dico, arr)

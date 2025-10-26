@@ -93,10 +93,8 @@ class SettingsWidget(QtWidgets.QWidget):
 
     def value(self) -> dict[str, str]:
         return {
-            "auto_detect": self.is_auto(),
             "exp": self.selected_enum(),
             "card_id": str(self.integer_value()),
-            "is_foil": False,
         }
 
     def set_value_auto(self, expansion: Enum, id_card: int) -> None:
