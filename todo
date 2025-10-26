@@ -1,7 +1,7 @@
 # TODO
-
--le "-" apparait que lorsque il y a au moins 2 items, faire apparaitre tout le temps
-
 - le fetch par defaut qui devrait prendre une image locale
 
 - implement le bouton fetchAllCards
+
+- si plusieurs cards fetch, alerte + possibilité de toggle en cliquant
+(brillant extension 1/2/3)

@@ -1,11 +1,11 @@
 import sys
 from PySide6 import QtWidgets, QtGui
 from apps.gui_qt.widgets.video_view import VideoView
-from apps.gui_qt.widgets.settings_widget import SettingsWidget
+from apps.gui_qt.widgets.manual_select_widget import SettingsWidget
 from core.api.types import Expansion
-from apps.gui_qt.widgets.add_cards_widget import HistoryWidget
-from apps.gui_qt.widgets.select_source_widget import SourceSelector
-
+from apps.gui_qt.widgets.history_widget import HistoryWidget
+from apps.gui_qt.widgets.select_source_widget import SourceSelectorWidget
+from apps.gui_qt.widgets.export_widget import ExportWidget
 from apps.gui_qt.controller import AppController
 from core.pipeline.base import Pipeline
 from core.pipeline.stages.card_detector import CardDetectorStage, EdgeExtractionStage
@@ -54,17 +54,11 @@ def main() -> None:
     toolbar.addAction(btn_stop)
     win.addToolBar(toolbar)
 
-    btn_source = QtGui.QAction("Choisir Source", win)
-    toolbar.addAction(btn_source)
-    selector_widget = None
+    selector_widget = SourceSelectorWidget()
+    toolbar.addWidget(selector_widget)
 
-    def on_source() -> None:
-        nonlocal selector_widget, ctrl
-        selector_widget = SourceSelector()
-        selector_widget.source_selected.connect(ctrl.set_source)
-        selector_widget.show()
-
-    btn_source.triggered.connect(on_source)
+    export_widget = ExportWidget()
+    toolbar.addWidget(export_widget)
 
     # ====================
     # Side panel
@@ -126,9 +120,25 @@ def main() -> None:
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
     app.aboutToQuit.connect(ctrl.stop)
+    selector_widget.source_selected.connect(ctrl.set_source)
+    export_widget.export_requested.connect(history_widget.export_csv)
 
-    sys.exit(app.exec())
+    # sys.exit(app.exec())
+    app.exec()
 
+
+import cProfile
+import pstats
 
 if __name__ == "__main__":
+    print("OUIAIIII")
+    profiler = cProfile.Profile()
+    profiler.enable()  # Démarre le profiling
     main()
+    profiler.disable()  # Arrête le profiling
+
+    profiler.dump_stats("profile.prof")
+    stats = pstats.Stats(profiler)
+    stats.strip_dirs()  # Nettoie les chemins des modules
+    stats.sort_stats("cumtime")  # Trie par temps cumulé
+    stats.print_stats(20)  # Affiche les 20 fonctions les plus coûteuses

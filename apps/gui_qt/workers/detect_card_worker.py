@@ -19,8 +19,12 @@ class DetectCardWorker(QtCore.QObject):
     ) -> None:
         super().__init__()
         self._running = False
-        self._default_side_image = cv2.imread("no_zoom_available.png")
-        self._default_main_image = cv2.imread("no_image_source_available.png")
+        self._default_side_image = cv2.imread(
+            "apps/gui_qt/images/no_zoom_available.png"
+        )
+        self._default_main_image = cv2.imread(
+            "apps/gui_qt/images/no_image_source_available.png"
+        )
         self._source = None
         self.set_source(VideoFileSource("videos/video0.mp4"))
         self._pipeline_main = pipelines["pipeline_main"]

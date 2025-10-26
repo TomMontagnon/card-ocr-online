@@ -13,6 +13,10 @@ class Meta:
     state_OK : bool = True
 
 
+class Database(Enum):
+    SWUDB = "swudb.com (.csv)"
+    DATABASE2 = "database2 (.csv)"
+
 class Expansion(Enum):
     SOR_EN = 2
     SOR_DE = 3

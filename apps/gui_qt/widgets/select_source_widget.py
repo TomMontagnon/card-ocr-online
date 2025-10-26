@@ -4,30 +4,29 @@ from core.api.interfaces import IFrameSource
 from core.io.sources import RtspSource, CameraSource, VideoFileSource
 
 
-class SourceSelector(QtWidgets.QWidget):
-    source_selected = QtCore.Signal(IFrameSource)  # Émet la source choisie
+class SourceSelectorWidget(QtWidgets.QToolButton):
+    source_selected = QtCore.Signal(IFrameSource)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
-        self.setWindowTitle("Source")
-        layout = QtWidgets.QVBoxLayout(self)
+        self.setText("Source")
+        self.setPopupMode(QtWidgets.QToolButton.InstantPopup)
 
-        # Camera
-        cam_btn = QtWidgets.QPushButton("Camera")
-        cam_btn.clicked.connect(self._choose_camera)
-        layout.addWidget(cam_btn)
+        menu = QtWidgets.QMenu(self)
 
-        # RTSP
-        rtsp_btn = QtWidgets.QPushButton("RTSP")
-        rtsp_btn.clicked.connect(self._choose_rtsp)
-        layout.addWidget(rtsp_btn)
+        cam_action = menu.addAction("Caméra")
+        cam_action.triggered.connect(self._choose_camera)
 
-        # Video File
-        video_btn = QtWidgets.QPushButton("Fichier vidéo")
-        video_btn.clicked.connect(self._choose_video)
-        layout.addWidget(video_btn)
+        rtsp_action = menu.addAction("RTSP / MJPEG")
+        rtsp_action.triggered.connect(self._choose_rtsp)
 
+        file_action = menu.addAction("Fichier vidéo")
+        file_action.triggered.connect(self._choose_video)
+
+        self.setMenu(menu)
+
+    # ------------------------------------------------------------------
     def _choose_camera(self) -> None:
         cameras = self._list_cameras()
         if not cameras:
@@ -36,66 +35,53 @@ class SourceSelector(QtWidgets.QWidget):
             )
             return
 
-        cam, ok = QtWidgets.QInputDialog.getItem(
-            self, "Choisir une caméra", "Caméras disponibles:", cameras, 0, False
-        )
-        if ok:
-            index = int(cam.split()[0])
-            source = CameraSource(index)
-            self.source_selected.emit(source)
+        # Si une seule caméra
+        if len(cameras) == 1:
+            index = int(cameras[0].split()[0])
+            self.source_selected.emit(CameraSource(index))
             print(("camera", index))
-            self.close()
+            return
 
+        # Menu contextuel rapide
+        menu = QtWidgets.QMenu(self)
+        for cam in cameras:
+            action = menu.addAction(cam)
+            action.triggered.connect(lambda _, c=cam: self._select_camera(c))
+        menu.exec(self.mapToGlobal(QtCore.QPoint(0, self.height())))
+
+    def _select_camera(self, cam: str) -> None:
+        index = int(cam.split()[0])
+        self.source_selected.emit(CameraSource(index))
+        print(("camera", index))
+
+    # ------------------------------------------------------------------
     def _choose_rtsp(self) -> None:
-        # Crée une boîte de dialogue personnalisée plus flexible
-        dialog = QtWidgets.QDialog(self)
-        dialog.setWindowTitle("Entrer l'adresse RTSP / MJPEG")
-
-        layout = QtWidgets.QVBoxLayout(dialog)
-
-        label = QtWidgets.QLabel("Adresse RTSP / MJPEG :")
-        layout.addWidget(label)
-
-        # Champ de saisie avec valeur par défaut et largeur augmentée
-        line_edit = QtWidgets.QLineEdit(dialog)
-        line_edit.setText("http://:8080/video/mjpeg")
-        line_edit.setMinimumWidth(300)
-        layout.addWidget(line_edit)
-
-        # Boutons OK / Annuler
-        btns = QtWidgets.QDialogButtonBox(
-            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        text, ok = QtWidgets.QInputDialog.getText(
+            self,
+            "RTSP / MJPEG",
+            "Adresse :",
+            QtWidgets.QLineEdit.Normal,
+            "http://:8080/video/mjpeg",
         )
-        layout.addWidget(btns)
+        if ok and text.strip():
+            self.source_selected.emit(RtspSource(text.strip()))
+            print(("rtsp", text.strip()))
 
-        btns.accepted.connect(dialog.accept)
-        btns.rejected.connect(dialog.reject)
-
-        # Exécute le dialogue
-        if dialog.exec() == QtWidgets.QDialog.Accepted:
-            text = line_edit.text().strip()
-            if text:
-                source = RtspSource(text)
-                self.source_selected.emit(source)
-                print(("rtsp", text))
-                self.close()
-
+    # ------------------------------------------------------------------
     def _choose_video(self) -> None:
         path, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Ouvrir une vidéo", "", "Video Files (*.mp4 *.avi *.mkv)"
         )
         if path:
-            source = VideoFileSource(path)
-            self.source_selected.emit(source)
+            self.source_selected.emit(VideoFileSource(path))
             print(("video", path))
-            self.close()
 
-    def _list_cameras(self) -> list:
-        """Teste les indices de caméra et renvoie la liste disponible"""
+    # ------------------------------------------------------------------
+    def _list_cameras(self) -> None:
         available = []
-        for i in range(5):  # teste les 5 premières caméras
+        for i in range(5):
             cap = cv2.VideoCapture(i)
             if cap.isOpened():
-                available.append(f"{i} - Camera {i}")
+                available.append(f"{i} - Caméra {i}")
                 cap.release()
         return available

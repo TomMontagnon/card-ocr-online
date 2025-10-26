@@ -36,10 +36,11 @@ class FetchArtWorker:
         data = resp.json()
         # print(data["id"])
         print(len(data["data"]))
-        url = data["data"][0]["attributes"]["artFront"]["data"]["attributes"][
-            "formats"
-        ]["card"]["url"]
-        return url
+        urls = [
+            d["attributes"]["artFront"]["data"]["attributes"]["formats"]["card"]["url"]
+            for d in data["data"]
+        ]
+        return urls
 
     def emit_card_from_url(self, url: str) -> None:
         img = np_from_url(url)
@@ -48,7 +49,7 @@ class FetchArtWorker:
 
 foo = FetchArtWorker()
 
-dico = {"exp" : Expansion.LOF_FR,"card_id":1}
+dico = {"exp": Expansion.SOR_FR, "card_id": 1}
 
 res = foo.emit_card_from_name(dico)
 

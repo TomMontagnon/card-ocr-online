@@ -112,7 +112,11 @@ class OcrExtractTextStage(IPipelineStage):
                     )
 
                     txt = (
-                        t.upper().replace("-", "_").replace("•", "_").replace("·", "_")
+                        t.upper()
+                        .replace(".", "_")
+                        .replace("-", "_")
+                        .replace("•", "_")
+                        .replace("·", "_")
                     )
 
                     if "_" in txt:  # EXPANSION
@@ -159,8 +163,5 @@ class OcrMeanYield(IPipelineStage):
             # calcul du couple le plus fréquent
             most_common = Counter(self._history).most_common(1)[0][0]
             meta.info["expansion"], meta.info["idcard"] = most_common
-        else:
-            # pas de données dans l'historique, on laisse les valeurs inchangées
-            pass
 
         return frame, meta

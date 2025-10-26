@@ -80,7 +80,8 @@ class Expansion(Enum):
     SEC_ES = 76
     SEC_IT = 77
 
-def foo(
+
+def get_one_card(
     exp: Expansion = None, lan: str = "fr", card_number: int = 1
 ) -> requests.models.Response:
     url = "https://admin.starwarsunlimited.com/api/card-list"
@@ -101,10 +102,6 @@ def foo(
         ("sort[0]", "type.sortValue:asc,expansion.sortValue:desc,cardNumber:asc"),
         ("filters[$and][0][variantOf][id][$null]", "true"),
         ("filters[$and][1][cardNumber][$eq]", card_number),
-        ("aspectMethod", "0"),
-        ("aspect", "0"),
-        ("traitMethod", "0"),
-        ("trait", "0"),
     ]
     if exp is not None:
         params.append(("filters[$and][2][expansion][id][$eq]", exp.value))
@@ -114,7 +111,7 @@ def foo(
     return resp
 
 
-def fetch_exp_ids() -> list:
+def fetch_expansion_ID() -> list:
     def iter_objects(o):
         # Génère tous les dicts rencontrés dans l'arbre JSON
         if isinstance(o, dict):
@@ -127,7 +124,7 @@ def fetch_exp_ids() -> list:
 
     result = []
     for lan in ["en", "fr", "de", "es", "it"]:
-        resp = foo(None, lan, 1)
+        resp = get_one_card(None, lan, 1)
 
         result += [
             f"{obj['expansion']['data']['attributes']['code']}_{lan.upper()} = {obj['expansion']['data']['id']}"
@@ -142,7 +139,7 @@ def fetch_exp_ids() -> list:
     return result
 
 
-def sort_and_display_exp_ids(lst: list) -> None:
+def sort_and_display_expansion_ID(lst: list) -> None:
     def key_num(s: str) -> int:
         # extrait le nombre après "=" (tolère espaces)
         m = re.search(r"=\s*(\d+)\s*$", s)
@@ -152,9 +149,5 @@ def sort_and_display_exp_ids(lst: list) -> None:
     print("\n".join(unique_sorted))
 
 
-resp = foo(Expansion.SOR_FR)
-data = resp.json()
-url = data["data"][0]["attributes"]["artFront"]["data"]["attributes"]["formats"]["card"]["url"]
-print(url)
-# lst = fetch_exp_ids()
-# sort_and_display_exp_ids(lst)
+lst = fetch_expansion_ID()
+sort_and_display_expansion_ID(lst)

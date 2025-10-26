@@ -35,6 +35,7 @@ class FetchArtWorker(QtCore.QObject):
         ]
         resp = request_url(url, headers, params)
         data = resp.json()
+        print(len(data["data"]))
         url = data["data"][0]["attributes"]["artFront"]["data"]["attributes"][
             "formats"
         ]["card"]["url"]
