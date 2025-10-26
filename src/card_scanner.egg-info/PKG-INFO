@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: card_scanner
+Version: 0.1.0
+Summary: Core OpenCV + UI Pyside pour scanner des cartes SWU
+Author-email: "tom.montagnon" <tom.montagnon@protonmail.com>
+Requires-Python: >=3.10
+Requires-Dist: opencv-python>=4.10.0
+Requires-Dist: PySide6>=6.7.0
+Requires-Dist: numpy>=1.26
+Requires-Dist: tomli>=2.0; python_version < "3.11"

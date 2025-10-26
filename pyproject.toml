@@ -1,20 +1,29 @@
-[tool.poetry]
-name = "card-ocr-online"
-version = "0.1.0"
-description = "Core OpenCV + UI PySide, découplés"
-authors = ["tom.montagnon@protonmail.com"]
-packages = [{include="core"}, {include="apps"}]
-
-[tool.poetry.dependencies]
-python = "^3.10"
-opencv-python = "^4.10.0"
-PySide6 = "^6.7.0"
-numpy = "^1.26"
-tomli = {version="^2.0", python="<3.11"}
-
-[tool.poetry.scripts]
-opencv-pyside-gui = "apps.gui_qt.main:main"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "card_scanner"
+version = "0.1.0"
+description = "Core OpenCV + UI Pyside pour scanner des cartes SWU"
+authors = [
+    { name = "tom.montagnon", email = "tom.montagnon@protonmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "opencv-python>=4.10.0",
+    "PySide6>=6.7.0",
+    "numpy>=1.26",
+    "tomli>=2.0; python_version<'3.11'"
+]
+
+[project.scripts]
+my_app = "card_scanner.apps.gui_qt.main:main"
+
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["card_scanner*"]
+
+[tool.setuptools.package-data]
+card_scanner = ["apps/gui_qt/assets/**/*", "config/*.toml"]

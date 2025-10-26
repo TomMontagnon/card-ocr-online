@@ -1,0 +1,31 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from card_scanner.core.api import Frame, Meta
+
+
+class IFrameSource(ABC):
+    @abstractmethod
+    def start(self) -> None: ...
+    @abstractmethod
+    def read(self) -> tuple[Frame, Meta]: ...
+    @abstractmethod
+    def stop(self) -> None: ...
+
+
+class IPipelineStage(ABC):
+    @abstractmethod
+    def process(self, frame: Frame, meta: Meta) -> tuple[Any, Meta]: ...
+
+
+class IFrameSink(ABC):
+    @abstractmethod
+    def open(self) -> None: ...
+    @abstractmethod
+    def connect(self, slot: callable) -> None: ...
+    @abstractmethod
+    def push(self, item: Frame, meta: Meta) -> None: ...
+    @abstractmethod
+    def close(self) -> None: ...
