@@ -1,2 +1,0 @@
-[console_scripts]
-my_app = card_scanner.apps.gui_qt.main:main

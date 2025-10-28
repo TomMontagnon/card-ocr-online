@@ -38,7 +38,7 @@ class AppController(QtCore.QObject):
 
         # CONNEXIONS
         self.source_changed.connect(self.worker.set_source)
-        self.start()
+        self.launch()
 
     def _push(
         self, main_frame: Frame, main_meta: Meta, side_frame: Frame, side_meta: Meta
@@ -51,10 +51,6 @@ class AppController(QtCore.QObject):
         self.source_changed.emit(src)
 
     def start(self) -> None:
-        self._main_cam_sink.open()
-        self._card_id_zoom_sink.open()
-        self._card_artwork_sink.open()
-        self._thread2.start()
         if self._source:
             self._source.start()
         if not self._thread.isRunning():
@@ -65,11 +61,18 @@ class AppController(QtCore.QObject):
         self._thread.quit()
         self._thread.wait()
 
-        # self._thread2.quit()
-        # self._thread2.wait()
-
         if self._source:
             self._source.stop()
-        # self._main_cam_sink.close()
-        # self._card_id_zoom_sink.close()
-        # self._card_artwork_sink.close()
+
+    def launch(self) -> None:
+        self._main_cam_sink.open()
+        self._card_id_zoom_sink.open()
+        self._card_artwork_sink.open()
+        self.start()
+        self._thread2.start()
+
+    def quit(self) -> None:
+        self.stop()
+
+        self._thread2.quit()
+        self._thread2.wait()

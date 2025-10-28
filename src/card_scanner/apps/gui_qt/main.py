@@ -127,7 +127,7 @@ def main() -> None:
     card_artwork_widget.locked.connect(history_widget.set_current_card)
     btn_start.triggered.connect(ctrl.start)
     btn_stop.triggered.connect(ctrl.stop)
-    app.aboutToQuit.connect(ctrl.stop)
+    app.aboutToQuit.connect(ctrl.quit)
     selector_widget.source_selected.connect(ctrl.set_source)
     export_widget.export_requested.connect(history_widget.export_csv)
 
