@@ -60,8 +60,8 @@ class OcrProcessStage(IPipelineStage):
                 use_doc_unwarping=False,
                 use_textline_orientation=False,
             )
-        except Exception:
-            print("OCR Exception")
+        except Exception as e:
+            print(f"OCR Exception : {e}")
         return frame, meta
 
 
@@ -117,6 +117,7 @@ class OcrExtractTextStage(IPipelineStage):
                         .replace("-", "_")
                         .replace("•", "_")
                         .replace("·", "_")
+                        .replace("+", "_")
                     )
 
                     if "_" in txt:  # EXPANSION

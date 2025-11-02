@@ -4,6 +4,7 @@ from .manual_select_widget import SettingsWidget
 from .select_source_widget import SourceSelectorWidget
 from .variant_selector_widget import VariantSelectorWidget
 from .video_view import VideoView
+from .offline_database_widget import OfflineDBWidget
 
 __all__ = [
     "ExportWidget",
@@ -12,4 +13,5 @@ __all__ = [
     "SourceSelectorWidget",
     "VariantSelectorWidget",
     "VideoView",
+    "OfflineDBWidget"
 ]

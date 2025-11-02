@@ -8,6 +8,7 @@ from card_scanner.apps.gui_qt.widgets import (
     VariantSelectorWidget,
     SettingsWidget,
     VideoView,
+    OfflineDBWidget,
 )
 from card_scanner.apps.gui_qt.controller import AppController
 from card_scanner.core.pipeline import (
@@ -65,6 +66,9 @@ def main() -> None:
 
     export_widget = ExportWidget()
     toolbar.addWidget(export_widget)
+
+    offline_db_widget = OfflineDBWidget()
+    toolbar.addWidget(offline_db_widget)
 
     # ====================
     # Side panel

@@ -241,11 +241,12 @@ class HistoryWidget(QtWidgets.QWidget):
                 if widget:
                     dico = widget.dico
                     count = widget.count
+                    is_foil = str("foil" in dico["variant"].lower()).lower()
                     writer.writerow(
                         [
                             dico.get("exp", "").name.split("_")[0],
                             dico.get("card_id", ""),
                             count,
-                            dico.get("is_foil", False),
+                            is_foil,
                         ]
                     )

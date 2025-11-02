@@ -22,21 +22,22 @@ class ClickableArea(QtWidgets.QWidget):
         layout.setAlignment(QtCore.Qt.AlignCenter)
 
         # Si un pictogramme est fourni
-        if icon_path:
-            icon_label = QtWidgets.QLabel()
-            icon_label.setStyleSheet("background: transparent;")
-            pixmap = QtGui.QPixmap(icon_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaled(
-                    QtCore.QSize(icon_size, icon_size),
-                    QtCore.Qt.KeepAspectRatio,
-                    QtCore.Qt.SmoothTransformation,
-                )
-                icon_label.setPixmap(pixmap)
-                icon_label.setAlignment(QtCore.Qt.AlignCenter)
-                layout.addWidget(icon_label)
-            else:
-                print(f"Impossible de charger le pictogramme : {icon_path}")
+        if not icon_path:
+            print(f"Impossible de charger le pictogramme : {icon_path}")
+            return
+
+        icon_label = QtWidgets.QLabel()
+        icon_label.setStyleSheet("background: transparent;")
+        pixmap = QtGui.QPixmap(icon_path)
+        if not pixmap.isNull():
+            pixmap = pixmap.scaled(
+                QtCore.QSize(icon_size, icon_size),
+                QtCore.Qt.KeepAspectRatio,
+                QtCore.Qt.SmoothTransformation,
+            )
+            icon_label.setPixmap(pixmap)
+            icon_label.setAlignment(QtCore.Qt.AlignCenter)
+            layout.addWidget(icon_label)
 
     def mousePressEvent(self, event) -> None:
         self.clicked.emit()
@@ -71,9 +72,7 @@ class VariantSelectorWidget(QtWidgets.QWidget):
             self.right_area = ClickableArea(
                 self.stack_container, "rgba(0,255,0,0.3)", str(p)
             )
-        with resources.path(
-            "card_scanner.apps.gui_qt.assets.pictos", "lock.png"
-        ) as p:
+        with resources.path("card_scanner.apps.gui_qt.assets.pictos", "lock.png") as p:
             self.lock_area = ClickableArea(
                 self.stack_container, "rgba(0,0,255,0.3)", str(p)
             )
@@ -116,7 +115,7 @@ class VariantSelectorWidget(QtWidgets.QWidget):
         super().resizeEvent(event)
 
     # --- logique d'affichage ---
-    def set_variants(self, dico : dict, variants : list) -> None:
+    def set_variants(self, dico: dict, variants: list) -> None:
         """variants: list of (variant_name, np_frame)"""
         self.variants = variants
         self.dico = dico

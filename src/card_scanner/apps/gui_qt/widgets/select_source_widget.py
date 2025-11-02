@@ -53,7 +53,6 @@ class SourceSelectorWidget(QtWidgets.QToolButton):
     def _select_camera(self, cam: str) -> None:
         index = int(cam.split()[0])
         self.source_selected.emit(CameraSource(index))
-        print(("camera", index))
 
     # ------------------------------------------------------------------
     def _choose_rtsp(self) -> None:

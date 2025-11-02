@@ -1,8 +1,8 @@
-from core.utils.imaging import np_from_url
+from card_scanner.core.utils.imaging import np_from_url
 import json
-from core.utils.network import request_url
+from card_scanner.core.utils.network import request_url
 
-from core.api.types import Expansion
+from card_scanner.core.api.types import Expansion
 
 
 class FetchArtWorker:
@@ -28,12 +28,13 @@ class FetchArtWorker:
             ("locale", lan),
             ("sort[0]", "type.sortValue:asc,expansion.sortValue:desc,cardNumber:asc"),
             ("filters[$and][1][cardNumber][$eq]", card_number),
-            # ("filters[$and][2][type][value][$notContainsi]", "Token"),
+            ("filters[$and][2][type][value][$notContainsi]", "Token"),
             ("filters[$and][2][expansion][id][$eq]", exp),
         ]
         resp = request_url(url, headers, params)
         data = resp.json()
-        print(len(data["data"]))
+        # print(data)
+        print("nb variant : ", len(data["data"]))
         return data
 
     def emit_card_from_url(self, url: str) -> None:
@@ -43,7 +44,8 @@ class FetchArtWorker:
 
 def register(res) -> None:
     for i in res["data"]:
-        name = i["attributes"]["artFront"]["data"]["attributes"]["name"]
+        # name = i["attributes"]["artFront"]["data"]["attributes"]["name"]
+        name = "default"
 
         with open(f"{name}.json", "w") as f:
             json.dump(i, f, indent=2, ensure_ascii=False)
@@ -55,20 +57,20 @@ def print_url(res) -> None:
             i["attributes"]["artFront"]["data"]["attributes"]["formats"]["card"]["url"]
         )
 
+
 def associated_variant(res) -> None:
     arr = []
     for i in res["data"]:
-        url = i["attributes"]["artFront"]["data"]["attributes"]["formats"]["card"]["url"]
+        url = i["attributes"]["artFront"]["data"]["attributes"]["formats"]["card"][
+            "url"
+        ]
         variant = i["attributes"]["variantTypes"]["data"][0]["attributes"]["name"]
         print(url, variant)
-        arr.append((variant,url))
+        arr.append((variant, url))
 
-    # print(arr)
-
-    
-dico = {"exp": Expansion.SHD_EN, "card_id": 1}
+dico = {"exp": Expansion.SOR_EN, "card_id": 364}
 res = FetchArtWorker().emit_card_from_name(dico)
 
 # register(res)
-# print_url(res)
-associated_variant(res)
+print_url(res)
+# associated_variant(res)
